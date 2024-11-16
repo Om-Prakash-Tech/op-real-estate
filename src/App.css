@@ -1,0 +1,23 @@
+.transaction-modal .ant-modal-header {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background: white;
+    margin-bottom: 10px;
+    border-radius: 8px 8px 0 0;
+    border-bottom: 2px solid #f0f0f0;
+}
+
+.transaction-modal .ant-modal-body {
+    max-height: calc(90vh - 110px);
+    overflow-y: auto;
+    margin-top: 20px;
+    scrollbar-width: thin;
+    scrollbar-color: #888 #f1f1f1;
+}
+
+.transaction-modal .ant-modal-content {
+    max-height: 90vh;
+    overflow: hidden;
+}
+

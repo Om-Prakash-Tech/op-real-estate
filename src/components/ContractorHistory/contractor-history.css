@@ -1,0 +1,38 @@
+/* contractor-history.css */
+.contractor-history-card {
+    margin: 20px;
+}
+
+.history-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.step-title {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.step-description {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.latest-step {
+    color: #1890ff;
+}
+
+@media (max-width: 768px) {
+    .contractor-history-card {
+        margin: 10px;
+    }
+
+    .step-title {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
+    }
+}

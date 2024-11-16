@@ -1,0 +1,56 @@
+.deals-table {
+    margin-top: 24px;
+}
+
+.deal-card {
+    margin-bottom: 16px;
+}
+
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.card-header h3 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 500;
+}
+
+.deal-details p {
+    margin: 2px 0;
+}
+
+.deal-details strong {
+    width: 100px;
+}
+
+@media (max-width: 768px) {
+    .buy-sell-container {
+        padding: 2px;
+    }
+
+    .deal-card {
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        transition: all 0.3s ease;
+
+    }
+
+    .card-header {
+        position: relative;
+        margin-top: -5px;
+    }
+
+    .deal-details {
+        margin-bottom: -5px;
+    }
+
+    .deal-details strong {
+        display: inline-block;
+        width: 70px;
+    }
+
+
+}

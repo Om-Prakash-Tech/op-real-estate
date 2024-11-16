@@ -1,0 +1,151 @@
+/* src/components/Home/Home.css */
+.home-container {
+    height: 100%;
+    padding: 0;
+    margin: 0;
+}
+
+/* Custom styles for the table */
+.ant-table-wrapper {
+    height: 100%;
+}
+
+.ant-table {
+    height: 100%;
+}
+
+/* Style for table header */
+.ant-table-thead>tr>th {
+    background-color: #f0f2f5;
+    font-weight: var(--font-weight-bold);
+    padding: 12px 16px;
+}
+
+/* Style for table rows */
+.ant-table-tbody>tr>td {
+    padding: 12px 16px;
+}
+
+/* Hover effect for rows */
+.ant-table-tbody>tr:hover>td {
+    background-color: #f5f5f5;
+}
+
+/* Style for fixed header */
+.ant-table-header {
+    overflow: hidden !important;
+    margin-bottom: 0 !important;
+    padding-bottom: 0 !important;
+}
+
+.verification-modal {
+    display: flex;
+    flex-direction: column;
+    margin-top: 20px;
+    margin-bottom: 10px;
+}
+
+.signature-section {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.signature-container {
+    border: 1px solid #d9d9d9;
+    border-radius: 4px;
+    margin-bottom: 10px;
+}
+
+.new-transaction-button-container {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 15px;
+    margin-right: 20px;
+}
+
+
+/* Home.css */
+@media screen and (max-width: 768px) {
+    .header {
+        display: flex;
+        flex-direction: row;
+        justify-content: space-between;
+    }
+
+    .edit-button{
+        position: relative;
+        top: -5px;
+    }
+
+    .new-transaction-button-container{
+        display: none;
+    }
+
+    .mobile-cards {
+        padding: 0;
+    }
+
+    .contractor-card {
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        border-radius: 8px;
+        height: 11rem;
+        transition: all 0.3s ease;
+    }
+
+    .contractor-card.selected {
+        border: 1px solid #000;
+    }
+
+    .cont-name {
+        font-size: 18px;
+        font-weight: 600;
+        margin-top: -5px;
+    }
+
+    .divider {
+        height: 1px;
+        background-color: #e8e8e8;
+        margin-top: 5px;
+    }
+
+    .amount-row {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .amount-item {
+        display: flex;
+        flex-direction: row;
+    }
+
+    .pending-amount {
+        text-align: center;
+    }
+
+    .label {
+        color: #666;
+        font-size: 14px;
+        margin-right: 8px;
+    }
+
+    .value {
+        font-size: 14px;
+        font-weight: 500;
+    }
+
+    .verification-status {
+        text-align: center;
+        font-weight: 500;
+    }
+
+    .verification-status.verified {
+        color: #52c41a;
+    }
+
+    .verification-status.pending {
+        color: #1890ff;
+        cursor: pointer;
+    }
+}
