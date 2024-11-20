@@ -12,7 +12,8 @@ import {
     Col,
     Space,
     Radio,
-    Alert
+    Alert,
+    Spin
 } from 'antd';
 import { EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import { useMediaQuery } from '@mui/material';
@@ -38,10 +39,12 @@ const BuySell = () => {
     const [isDeleteModalVisible, setIsDeleteModalVisible] = useState(false);
     const [selectedDeal, setSelectedDeal] = useState<PropertyDeal | null>(null);
     const [customers, setCustomers] = useState<string[]>([]);
+    const [loading, setLoading] = useState(false);
     const [editForm] = Form.useForm();
     const isMobile = useMediaQuery('(max-width:768px)');
 
     const fetchDeals = async () => {
+        setLoading(true);
         try {
             const response = await dealsAPI.getAll();
             const dealsData = response.data.map((deal: PropertyDeal) => ({
@@ -58,6 +61,8 @@ const BuySell = () => {
         } catch (error) {
             console.error('Error fetching deals:', error);
             message.error('Failed to fetch deals');
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -176,11 +181,11 @@ const BuySell = () => {
                     </Space>
                 </div>
                 <div className="deal-details">
-                    <p><strong>Project:</strong> {deal.projectName}</p>
-                    <p><strong>Phone:</strong> {deal.phone}</p>
-                    <p><strong>Type:</strong> {deal.dealType}</p>
-                    <p><strong>Amount:</strong> {deal.transactionAmount.toLocaleString()}</p>
-                    <p><strong>Total Deal:</strong> {deal.dealAmount.toLocaleString()}</p>
+                    <p>Project: <strong>{deal.projectName}</strong></p>
+                    <p>Phone: <strong>{deal.phone}</strong></p>
+                    <p>Type: <strong>{deal.dealType}</strong></p>
+                    <p>Amount: <strong>{deal.transactionAmount.toLocaleString()}</strong></p>
+                    <p>Total Deal: <strong>{deal.dealAmount.toLocaleString()}</strong></p>
                 </div>
             </Card>
         </Col>
@@ -218,24 +223,34 @@ const BuySell = () => {
                             </Button>
                         </Space>
                     </div>
-                    <Table
-                        columns={columns}
-                        dataSource={deals}
-                        pagination={false}
-                        className="deals-table"
-                        onRow={(record) => ({
-                            onClick: () => {
-                                setSelectedDeal(record);
-                                editForm.setFieldsValue(record);
-                            },
-                            style: { cursor: 'pointer' }
-                        })}
-                    />
+                        <Table
+                            columns={columns}
+                            dataSource={deals}
+                            pagination={false}
+                            loading={loading}
+                            className="deals-table"
+                            onRow={(record) => ({
+                                onClick: () => {
+                                    setSelectedDeal(record);
+                                    editForm.setFieldsValue(record);
+                                },
+                                style: { cursor: 'pointer' }
+                            })}
+                        />
                 </>
             ) : (
-                <Row gutter={[16, 16]} className="mobile-cards">
-                    {deals.map(renderMobileCard)}
-                </Row>
+                <div style={{ position: 'relative', minHeight: '200px' }}>
+                    <Spin spinning={loading} style={{
+                        position: loading && deals.length === 0 ? 'absolute' : 'static',
+                        top: '50%',
+                        left: '50%',
+                        transform: 'translate(-50%, -50%)'
+                    }}>
+                        <Row gutter={[16, 16]} className="mobile-cards">
+                            {deals.map(renderMobileCard)}
+                        </Row>
+                    </Spin>
+                </div>
             )}
 
             {/* Edit Modal */}

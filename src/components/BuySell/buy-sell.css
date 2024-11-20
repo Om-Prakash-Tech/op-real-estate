@@ -47,10 +47,7 @@
         margin-bottom: -5px;
     }
 
-    .deal-details strong {
-        display: inline-block;
-        width: 70px;
+    .deal-details strong{
+        margin-left: 5px;
     }
-
-
 }

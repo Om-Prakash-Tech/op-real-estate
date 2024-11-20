@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Table, Button, Modal, Form, Input, DatePicker, Select, message, Card, Row, Col, Space, Radio, Alert } from 'antd';
+import { Table, Button, Modal, Form, Input, DatePicker, Select, message, Card, Row, Col, Space, Radio, Alert, Spin } from 'antd';
 import { EditOutlined, DeleteOutlined, PlusOutlined } from '@ant-design/icons';
 import moment from 'moment';
 import {
@@ -254,7 +254,7 @@ const ProjectList = () => {
     const handleProjectClick = (project: ProjectWithDetails) => {
         navigate(`/project-history/${project.projectId}`, { state: project });
         setSelectedProjectHistory(project);
-        
+
     };
 
     const handleEditProjectSelect = (value: string) => {
@@ -502,6 +502,7 @@ const ProjectList = () => {
     const renderMobileCards = (items: (ProjectWithDetails | PropertyDeal)[], type: 'contractor' | 'property') => {
         return (
             <Row gutter={[16, 16]} className="mobile-cards">
+
                 {items.map((item) => (
                     <Col xs={24} key={'projectId' in item ? item.projectId : item.dealId}>
                         <Card
@@ -576,7 +577,7 @@ const ProjectList = () => {
                                         </div>
                                         <div className="detail-item">
                                             <span className="label">Budget:</span>
-                                            <span className="value">₹{(item as ProjectWithDetails).budget?.toLocaleString()}</span>
+                                            <span className="value">{(item as ProjectWithDetails).budget?.toLocaleString()}</span>
                                         </div>
                                         <div className="detail-item">
                                             <span className="label">Last Updated:</span>
@@ -644,11 +645,11 @@ const ProjectList = () => {
                                         </div>
                                         <div className="detail-item">
                                             <span className="label">Transaction Amount:</span>
-                                            <span className="value">₹{(item as PropertyDeal).transactionAmount?.toLocaleString()}</span>
+                                            <span className="value">{(item as PropertyDeal).transactionAmount?.toLocaleString()}</span>
                                         </div>
                                         <div className="detail-item">
                                             <span className="label">Deal Amount:</span>
-                                            <span className="value">₹{(item as PropertyDeal).dealAmount?.toLocaleString()}</span>
+                                            <span className="value">{(item as PropertyDeal).dealAmount?.toLocaleString()}</span>
                                         </div>
                                     </div>
                                 </>
@@ -665,15 +666,17 @@ const ProjectList = () => {
     return (
         <div className="project-list-container">
             <div className="project-list-header">
-                <Space>
+                <Space className='buttons'>
+                    <Space className='edit-delete'>
+                        <Button icon={<EditOutlined />} onClick={() => setIsEditModalVisible(true)}>
+                            Edit Project
+                        </Button>
+                        <Button icon={<DeleteOutlined />} danger onClick={() => setIsDeleteModalVisible(true)}>
+                            Delete Project
+                        </Button>
+                    </Space>
                     <Button icon={<PlusOutlined />} type="primary" onClick={() => setIsAddModalVisible(true)}>
                         Add Project
-                    </Button>
-                    <Button icon={<EditOutlined />} onClick={() => setIsEditModalVisible(true)}>
-                        Edit Project
-                    </Button>
-                    <Button icon={<DeleteOutlined />} danger onClick={() => setIsDeleteModalVisible(true)}>
-                        Delete Project
                     </Button>
                 </Space>
             </div>
@@ -681,25 +684,31 @@ const ProjectList = () => {
             <div className="section-container">
                 <h2 className="section-title">Contractor Projects</h2>
                 {isMobile ? (
-                    renderMobileCards(projects, 'contractor')
+                    <Spin spinning={loading} size='small'>
+                        {renderMobileCards(projects, 'contractor')}
+                    </Spin>
                 ) : (
-                    <Table
-                        loading={loading}
-                        columns={contractorColumns}
-                        dataSource={projects}
-                        pagination={false}
-                        onRow={(record: ProjectWithDetails) => ({
-                            onClick: () => handleProjectClick(record),
-                            style: { cursor: 'pointer' }
-                        })}
-                    />
+                    <>
+                        <Table
+                            loading={loading}
+                            columns={contractorColumns}
+                            dataSource={projects}
+                            pagination={false}
+                            onRow={(record: ProjectWithDetails) => ({
+                                onClick: () => handleProjectClick(record),
+                                style: { cursor: 'pointer' }
+                            })}
+                        />
+                    </>
                 )}
             </div>
 
             <div className="section-container">
                 <h2 className="section-title-2">Property Deals</h2>
                 {isMobile ? (
-                    renderMobileCards(propertyDeals, 'property')
+                    <Spin spinning={loading} size='small'>
+                        {renderMobileCards(propertyDeals, 'property')}
+                    </Spin>
                 ) : (
                     <Table
                         loading={loading}
