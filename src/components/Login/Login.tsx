@@ -5,8 +5,6 @@ import { getAuth, GoogleAuthProvider, signInWithPopup, setPersistence, browserLo
 import { app } from '../../Firebase';
 import { Button, Card, Spin, message } from 'antd';
 import { GoogleOutlined } from '@ant-design/icons';
-import fullLogo from '../../assets/Om-Prakash-Logo_processed.jpg'
-import smallLogo from '../../assets/only-logo_processed.jpg'
 import './Login.css';
 
 const Login = () => {
@@ -63,11 +61,11 @@ const Login = () => {
     return (
         <div className="layout">
             <div className="left">
-                <img src={fullLogo} alt="Logo" className='full-logo-img' />
+                <img src="src/assets/Om-Prakash-Logo_processed.jpg" alt="Logo" className='full-logo-img' />
             </div>
             <div className="right">
                 <div className="logo">
-                    <img src={smallLogo} alt="Logo" className='logo-img' />
+                    <img src="src/assets/only-logo_processed.jpg" alt="Logo" className='logo-img' />
                 </div>
                 <Card className="card">
 

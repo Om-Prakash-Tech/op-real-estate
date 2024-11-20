@@ -46,8 +46,8 @@ const ContractorHistory = () => {
             className="contractor-history-card"
             title={
                 <div className="history-header">
-                    <Title level={4}>{contractor.name} - Transaction History</Title>
-                    <Button icon={<CloseOutlined />} type="text" onClick={handleClose}>
+                    <Title level={4}>{contractor.name} - History</Title>
+                    <Button icon={<CloseOutlined />} type="text" onClick={handleClose} >
                         Close
                     </Button>
                 </div>

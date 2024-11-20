@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Table, Modal, Checkbox, Button, message, Card, Row, Col, Image } from 'antd';
+import { Table, Modal, Checkbox, Button, message, Card, Row, Col, Spin } from 'antd';
 import { ColumnType } from 'antd/es/table';
 import { TransactionOutlined } from '@ant-design/icons';
 import SignatureCanvas from 'react-signature-canvas';
@@ -221,7 +221,11 @@ const Home: React.FC<HomeProps> = ({ refreshKey = 0 }) => {
       </div>
 
       <div className="table-container">
-        {window.innerWidth <= 768 ? renderMobileCards() : (
+        {window.innerWidth <= 768 ? (
+          <Spin spinning={loading} size="large" className='mobile-loading'>
+            {renderMobileCards()}
+          </Spin>
+        ) : (
           <>
             <Table
               loading={loading}

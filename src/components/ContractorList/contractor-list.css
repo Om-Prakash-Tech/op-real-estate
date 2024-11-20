@@ -1,6 +1,4 @@
 
-
-
 @media screen and (max-width: 768px) {
     .mobile-cards {
         padding: 0;
@@ -58,11 +56,11 @@
         
     }
 
-    .button-icon-text {
-        display: none;
+    .mobile-loading{
+        margin-top: 30%;
     }
 
-    .all-buttons{
+    .edit-delete{
         display: none;
     }
 }

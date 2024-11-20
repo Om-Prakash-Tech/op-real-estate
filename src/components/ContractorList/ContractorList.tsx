@@ -1,7 +1,7 @@
 // ContractorList.tsx
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Table, Button, Modal, Form, Input, Select, message, Space, Card, Row, Col } from 'antd';
+import { Table, Button, Modal, Form, Input, Select, message, Space, Card, Row, Col, Spin } from 'antd';
 import { EditOutlined, DeleteOutlined, PlusOutlined } from '@ant-design/icons';
 import { contractorsAPI, metricsAPI } from '../../api';
 import AddContractor from '../AddContractor/AddContractor';
@@ -95,11 +95,6 @@ const ContractorList: React.FC = () => {
             dataIndex: 'email',
             key: 'email',
         },
-        {
-            title: 'Created At',
-            dataIndex: 'createdAt',
-            key: 'createdAt',
-        }
     ];
 
     const handleEditSubmit = async (values: any) => {
@@ -152,34 +147,28 @@ const ContractorList: React.FC = () => {
 
     const renderActionButtons = () => (
         <Space className='all-buttons' style={{ marginBottom: 16, width: '100%', display: 'flex', justifyContent: 'flex-end' }}>
-            <Space>
+                <Space className='edit-delete'>
                 <Button
                     icon={<EditOutlined />}
                     onClick={() => setShowEditModal(true)}
                 >
-                    <div className="button-icon-text">
                         Edit Contractor
-                    </div>
                 </Button>
                 <Button
                     icon={<DeleteOutlined />}
                     danger
                     onClick={() => setShowDeleteModal(true)}
                 >
-                    <div className="button-icon-text">
                         Delete Contractor
-                    </div>
-                </Button>
+                    </Button>
+                </Space>
                 <Button
                     type="primary"
                     icon={<PlusOutlined />}
                     onClick={() => setShowAddModal(true)}
                 >
-                    <div className="button-icon-text">
                         Add Contractor
-                    </div>
                 </Button>
-            </Space>
         </Space>
     );
 
@@ -239,7 +228,9 @@ const ContractorList: React.FC = () => {
             {renderActionButtons()}
 
             {window.innerWidth <= 768 ? (
-                renderMobileCards()
+                <Spin spinning={loading} size="large" className='mobile-loading'>
+                    {renderMobileCards()}
+                </Spin>
             ) : (
                 <Table
                     columns={columns}
