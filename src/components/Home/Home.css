@@ -74,13 +74,14 @@
         justify-content: space-between;
     }
 
-    .edit-button{
+    .edit-button {
         position: relative;
         top: -5px;
     }
 
-    .new-transaction-button-container{
-        display: none;
+    .new-transaction-button-container {
+        justify-content: flex-end;
+        margin-right: 0px;
     }
 
     .mobile-cards {
