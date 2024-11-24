@@ -8,13 +8,10 @@ import {
     projectsAPI,
     dealsAPI,
     metricsAPI,
-    //transactionsAPI
 } from '../../api';
-//import ProjectHistory from '../ProjectHistory/ProjectHistory';
 import './project-list.css';
 import { ColumnType } from 'antd/es/table';
 
-// Updated interfaces with proper types
 interface Contractor {
     contractorId: string;
     name: string;
@@ -29,8 +26,6 @@ interface Project {
     name: string;
     address: string;
     contractors: string[];
-    dueDate: string;
-    budget: number;
     createdAt: string;
     updatedAt: string;
 }
@@ -112,14 +107,12 @@ const ProjectList = () => {
         try {
             setLoading(true);
 
-            // Fetch all data with proper error handling
             const [projectsRes, dealsRes, contractorsRes] = await Promise.all([
                 projectsAPI.getAll(),
                 dealsAPI.getAll(),
                 contractorsAPI.getAll()
             ]);
 
-            // Type check and validate responses
             if (!projectsRes.data || !Array.isArray(projectsRes.data)) {
                 throw new Error('Invalid projects data format');
             }
@@ -132,7 +125,6 @@ const ProjectList = () => {
                 throw new Error('Invalid contractors data format');
             }
 
-            // Fetch details for each project
             const projectsWithDetails = await Promise.all(
                 projectsRes.data.map(fetchProjectDetails)
             );
@@ -153,17 +145,31 @@ const ProjectList = () => {
         fetchData();
     }, []);
 
+    const getUniqueCustomerDeals = (deals: PropertyDeal[]) => {
+        const uniqueCustomers = Array.from(new Set(deals.map(deal => deal.name)));
+        return uniqueCustomers.map(customerName => {
+            const customerDeals = deals.filter(deal => deal.name === customerName);
+            return customerDeals.reduce((latest, current) =>
+                new Date(current.transactionDate) > new Date(latest.transactionDate) ? current : latest
+            );
+        });
+    };
+
+    const getUniquePropertyProjects = (deals: PropertyDeal[]) => {
+        const uniqueProjects = Array.from(new Set(deals.map(deal => deal.projectName)));
+        return uniqueProjects.map(projectName => {
+            const projectDeals = deals.filter(deal => deal.projectName === projectName);
+            return projectDeals[0];
+        });
+    };
+
     const handleAddProject = async (values: any) => {
         try {
             if (values.projectType === 'contractor') {
                 const projectData = {
                     name: values.name,
                     address: values.address,
-                    contractors: values.contractors.map((name: string) =>
-                        contractors.find(c => c.name === name)?.contractorId
-                    ).filter(Boolean),
-                    dueDate: values.dueDate.format('YYYY-MM-DD'),
-                    budget: Number(values.budget),
+                    contractors: values.contractors,
                     createdAt: new Date().toISOString(),
                     updatedAt: new Date().toISOString()
                 };
@@ -185,45 +191,64 @@ const ProjectList = () => {
             setIsAddModalVisible(false);
             message.success('Project added successfully');
             form.resetFields();
-            await fetchData(); // Refresh data after adding
+            await fetchData();
         } catch (error) {
             console.error('Error adding project:', error);
             message.error('Failed to add project. Please try again.');
         }
     };
 
+
+
     const handleEditProject = async (values: any) => {
         try {
-            if (!selectedProject) return;
+            if (!selectedEditProject) {
+                message.error('Please select a project to edit');
+                return;
+            }
 
-            if ('projectId' in selectedProject) {
+            const projectToEdit = [...projects, ...propertyDeals].find(p =>
+                'projectId' in p ? p.projectId === selectedEditProject : p.dealId === selectedEditProject
+            );
+
+            if (!projectToEdit) {
+                message.error('Project not found');
+                return;
+            }
+
+            if ('projectId' in projectToEdit) {
                 const projectData = {
                     name: values.name,
                     address: values.address,
                     contractors: values.contractors,
-                    dueDate: values.dueDate.format('YYYY-MM-DD'),
-                    budget: Number(values.budget),
                     updatedAt: new Date().toISOString()
                 };
-                await projectsAPI.update(selectedProject.projectId, projectData);
+                await projectsAPI.update(selectedEditProject, projectData);
             } else {
-                const dealData = {
-                    projectName: values.projectName,
-                    address: values.address,
-                    name: values.name,
-                    phone: values.phone,
-                    dealType: values.dealType.toLowerCase(),
-                    transactionAmount: Number(values.transactionAmount),
-                    dealAmount: Number(values.dealAmount)
-                };
-                await dealsAPI.update(selectedProject.dealId, dealData);
+                // Update all deals with the same project name
+                const projectName = (projectToEdit as PropertyDeal).projectName;
+                const dealsToUpdate = propertyDeals.filter(deal => deal.projectName === projectName);
+
+                const dealUpdates = dealsToUpdate.map(deal =>
+                    dealsAPI.update(deal.dealId, {
+                        projectName: values.projectName,
+                        address: values.address,
+                        name: values.name,
+                        phone: values.phone,
+                        dealType: values.dealType.toLowerCase(),
+                        dealAmount: Number(values.dealAmount),
+                        transactionAmount: deal.transactionAmount
+                    })
+                );
+
+                await Promise.all(dealUpdates);
             }
 
             setIsEditModalVisible(false);
             message.success('Project updated successfully');
             editForm.resetFields();
-            setSelectedProject(null);
-            await fetchData(); // Refresh data after editing
+            setSelectedEditProject('');
+            await fetchData();
         } catch (error) {
             console.error('Error updating project:', error);
             message.error('Failed to update project. Please try again.');
@@ -232,18 +257,38 @@ const ProjectList = () => {
 
     const handleDeleteProject = async () => {
         try {
-            if (!selectedProject) return;
+            if (!selectedDeleteProject) {
+                message.error('Please select a project to delete');
+                return;
+            }
 
-            if ('projectId' in selectedProject) {
-                await projectsAPI.delete(selectedProject.projectId);
+            const projectToDelete = [...projects, ...propertyDeals].find(p =>
+                'projectId' in p ? p.projectId === selectedDeleteProject : p.dealId === selectedDeleteProject
+            );
+
+            if (!projectToDelete) {
+                message.error('Project not found');
+                return;
+            }
+
+            if ('projectId' in projectToDelete) {
+                await projectsAPI.delete(selectedDeleteProject);
             } else {
-                await dealsAPI.delete(selectedProject.dealId);
+                // Delete all deals with the same project name
+                const projectName = (projectToDelete as PropertyDeal).projectName;
+                const dealsToDelete = propertyDeals.filter(deal => deal.projectName === projectName);
+
+                const deletionPromises = dealsToDelete.map(deal =>
+                    dealsAPI.delete(deal.dealId)
+                );
+
+                await Promise.all(deletionPromises);
             }
 
             setIsDeleteModalVisible(false);
+            setSelectedDeleteProject('');
             message.success('Project deleted successfully');
-            setSelectedProject(null);
-            await fetchData(); // Refresh data after deleting
+            await fetchData();
         } catch (error) {
             console.error('Error deleting project:', error);
             message.error('Failed to delete project. Please try again.');
@@ -255,6 +300,11 @@ const ProjectList = () => {
         navigate(`/project-history/${project.projectId}`, { state: project });
         setSelectedProjectHistory(project);
 
+    };
+
+    const handleDealClick = (customerName: string) => {
+        const customerDeals = propertyDeals.filter(deal => deal.name === customerName);
+        navigate(`/deals-history/${customerName.replace(/\s+/g, '-')}`, { state: customerDeals });
     };
 
     const handleEditProjectSelect = (value: string) => {
@@ -270,8 +320,6 @@ const ProjectList = () => {
                     name: project.name,
                     address: project.address,
                     contractors: project.contractors,
-                    dueDate: moment(project.dueDate),
-                    budget: project.budget
                 });
             } else {
                 editForm.setFieldsValue({
@@ -311,27 +359,6 @@ const ProjectList = () => {
             render: (contractors: Contractor[]) =>
                 contractors.map(c => c.name).join(', ') || 'No contractors assigned',
         },
-        {
-            title: 'Due Date',
-            dataIndex: 'dueDate',
-            key: 'dueDate',
-            width: 150,
-            render: (date) => date ? new Date(date).toLocaleDateString() : 'N/A',
-        },
-        {
-            title: 'Budget',
-            dataIndex: 'budget',
-            key: 'budget',
-            width: 150,
-            render: (budget) => budget ? `${budget.toLocaleString()}` : 'N/A',
-        },
-        /*{
-            title: 'Last Updated',
-            dataIndex: 'updatedAt',
-            key: 'updatedAt',
-            width: 150,
-            render: (date) => date ? new Date(date).toLocaleDateString() : 'N/A',
-        },*/
     ];
 
     const propertyColumns: ColumnType<PropertyDeal>[] = [
@@ -356,15 +383,8 @@ const ProjectList = () => {
         {
             title: 'Transaction Type',
             dataIndex: 'dealType',
-            key: 'transactionType',
+            key: 'transactionType' ,
             width: 150,
-        },
-        {
-            title: 'Transaction Amount',
-            dataIndex: 'transactionAmount',
-            key: 'transactionAmount',
-            width: 150,
-            render: (amount) => amount ? `${amount.toLocaleString()}` : 'N/A',
         },
         {
             title: 'Total Deal Amount',
@@ -384,8 +404,7 @@ const ProjectList = () => {
                 <Form.Item
                     name="projectType"
                     label="Project Type"
-                    rules={[{ required: true, message: 'Please select a project type!' }]}
-                >
+                    rules={[{ required: true, message: 'Please select a project type!' }]}>
                     <Radio.Group onChange={(e) => setProjectType(e.target.value)}>
                         <Radio value="contractor">Contractor</Radio>
                         <Radio value="property">Buy/Sell</Radio>
@@ -397,8 +416,7 @@ const ProjectList = () => {
                         <Form.Item
                             name="name"
                             label="Project Name"
-                            rules={[{ required: true, message: 'Please input the project name!' }]}
-                        >
+                            rules={[{ required: true, message: 'Please input the project name!' }]}>
                             <Input />
                         </Form.Item>
 
@@ -409,9 +427,13 @@ const ProjectList = () => {
                         <Form.Item
                             name="contractors"
                             label="Assign Contractors"
-                            rules={[{ required: true, message: 'Please select at least one contractor!' }]}
-                        >
-                            <Select mode="multiple" placeholder="Select contractors">
+                            rules={[{ required: true, message: 'Please select at least one contractor!' }]}>
+                            <Select
+                                mode="multiple"
+                                placeholder="Select contractors"
+                                onChange={(selectedContractorIds) => {
+                                    formInstance.setFieldsValue({ contractors: selectedContractorIds });
+                                }}>
                                 {contractors.map((contractor) => (
                                     <Select.Option key={contractor.contractorId} value={contractor.contractorId}>
                                         {contractor.name}
@@ -419,25 +441,8 @@ const ProjectList = () => {
                                 ))}
                             </Select>
                         </Form.Item>
-
-                        <Form.Item
-                            name="dueDate"
-                            label="Due Date"
-                            rules={[{ required: true, message: 'Please select a due date!' }]}
-                        >
-                            <DatePicker />
-                        </Form.Item>
-
-                        <Form.Item
-                            name="budget"
-                            label="Budget"
-                            rules={[{ required: true, message: 'Please enter the budget!' }]}
-                        >
-                            <Input type="number" />
-                        </Form.Item>
                     </>
                 ) : (
-                    // Property deal form fields remain unchanged
                     <>
                         <Form.Item
                             name="projectName"
@@ -479,14 +484,6 @@ const ProjectList = () => {
                         </Form.Item>
 
                         <Form.Item
-                            name="transactionAmount"
-                            label="Transaction Amount"
-                            rules={[{ required: true, message: 'Please enter transaction amount!' }]}
-                        >
-                            <Input type="number" />
-                        </Form.Item>
-
-                        <Form.Item
                             name="dealAmount"
                             label="Total Deal Amount"
                             rules={[{ required: true, message: 'Please enter total deal amount!' }]}
@@ -500,19 +497,24 @@ const ProjectList = () => {
     };
 
     const renderMobileCards = (items: (ProjectWithDetails | PropertyDeal)[], type: 'contractor' | 'property') => {
+        const itemsToRender = type === 'property'
+            ? getUniqueCustomerDeals(items as PropertyDeal[])
+            : items;
         return (
             <Row gutter={[16, 16]} className="mobile-cards">
 
-                {items.map((item) => (
+                {itemsToRender.map((item) => (
                     <Col xs={24} key={'projectId' in item ? item.projectId : item.dealId}>
                         <Card
                             className="project-card"
                             onClick={() => {
                                 if (type === 'contractor') {
                                     handleProjectClick(item as ProjectWithDetails);
+                                } else {
+                                    handleDealClick((item as PropertyDeal).name);
                                 }
                             }}
-                            style={{ cursor: type === 'contractor' ? 'pointer' : 'default' }}
+                            style={{ cursor: 'pointer' }}
                             actions={[
 
                             ]}
@@ -536,8 +538,6 @@ const ProjectList = () => {
                                                             name: (item as ProjectWithDetails).name,
                                                             address: (item as ProjectWithDetails).address,
                                                             contractors: (item as ProjectWithDetails).contractors,
-                                                            dueDate: moment((item as ProjectWithDetails).dueDate),
-                                                            budget: (item as ProjectWithDetails).budget
                                                         }
 
                                                     );
@@ -561,28 +561,12 @@ const ProjectList = () => {
                                     <div className="project-details">
                                         <div className="detail-item">
                                             <span className="label">Address:</span>
-                                            <span className="value">{(item as ProjectWithDetails).address}</span>
+                                            <span className="value">{(item as ProjectWithDetails).address || 'N/A'}</span>
                                         </div>
                                         <div className="detail-item">
                                             <span className="label">Contractors:</span>
                                             <span className="value">
                                                 {(item as ProjectWithDetails).contractorDetails.map(c => c.name).join(', ') || 'None assigned'}
-                                            </span>
-                                        </div>
-                                        <div className="detail-item">
-                                            <span className="label">Due Date:</span>
-                                            <span className="value">
-                                                {(item as ProjectWithDetails).dueDate ? new Date((item as ProjectWithDetails).dueDate).toLocaleDateString() : 'N/A'}
-                                            </span>
-                                        </div>
-                                        <div className="detail-item">
-                                            <span className="label">Budget:</span>
-                                            <span className="value">{(item as ProjectWithDetails).budget?.toLocaleString()}</span>
-                                        </div>
-                                        <div className="detail-item">
-                                            <span className="label">Last Updated:</span>
-                                            <span className="value">
-                                                {(item as ProjectWithDetails).updatedAt ? new Date((item as ProjectWithDetails).updatedAt).toLocaleDateString() : 'N/A'}
                                             </span>
                                         </div>
                                     </div>
@@ -633,23 +617,19 @@ const ProjectList = () => {
                                     <div className="project-details">
                                         <div className="detail-item">
                                             <span className="label">Customer:</span>
-                                            <span className="value">{(item as PropertyDeal).name}</span>
+                                            <span className="value">{(item as PropertyDeal).name || 'N/A'}</span>
                                         </div>
                                         <div className="detail-item">
                                             <span className="label">Phone:</span>
-                                            <span className="value">{(item as PropertyDeal).phone}</span>
+                                            <span className="value">{(item as PropertyDeal).phone || 'N/A'}</span>
                                         </div>
                                         <div className="detail-item">
                                             <span className="label">Transaction Type:</span>
-                                            <span className="value">{(item as PropertyDeal).dealType.charAt(0).toUpperCase() + (item as PropertyDeal).dealType.slice(1)}</span>
-                                        </div>
-                                        <div className="detail-item">
-                                            <span className="label">Transaction Amount:</span>
-                                            <span className="value">{(item as PropertyDeal).transactionAmount?.toLocaleString()}</span>
+                                            <span className="value">{(item as PropertyDeal).dealType.charAt(0).toUpperCase() + (item as PropertyDeal).dealType.slice(1) || 'N/A'}</span>
                                         </div>
                                         <div className="detail-item">
                                             <span className="label">Deal Amount:</span>
-                                            <span className="value">{(item as PropertyDeal).dealAmount?.toLocaleString()}</span>
+                                            <span className="value">{(item as PropertyDeal).dealAmount?.toLocaleString() || 'N/A'}</span>
                                         </div>
                                     </div>
                                 </>
@@ -682,7 +662,7 @@ const ProjectList = () => {
             </div>
 
             <div className="section-container">
-                <h2 className="section-title">Contractor Projects</h2>
+                <h2 className="section-title-1">Contractor Projects</h2>
                 {isMobile ? (
                     <Spin spinning={loading} size='small'>
                         {renderMobileCards(projects, 'contractor')}
@@ -698,6 +678,10 @@ const ProjectList = () => {
                                 onClick: () => handleProjectClick(record),
                                 style: { cursor: 'pointer' }
                             })}
+                            scroll={{
+                                x: 'max-content',
+                                y: '40vh',
+                            }}
                         />
                     </>
                 )}
@@ -713,8 +697,16 @@ const ProjectList = () => {
                     <Table
                         loading={loading}
                         columns={propertyColumns}
-                        dataSource={propertyDeals}
+                        dataSource={getUniqueCustomerDeals(propertyDeals)}
                         pagination={false}
+                        onRow={(record) => ({
+                            onClick: () => handleDealClick(record.name),
+                            style: { cursor: 'pointer' }
+                        })}
+                        scroll={{
+                            x: 'max-content',
+                            y: '40vh',
+                        }}
                     />
                 )}
             </div>
@@ -758,7 +750,10 @@ const ProjectList = () => {
                     >
                         <Select
                             placeholder="Select a project"
-                            onChange={handleEditProjectSelect}
+                            onChange={(value) => {
+                                setSelectedEditProject(value);
+                                handleEditProjectSelect(value);
+                            }}
                             value={selectedEditProject}
                         >
                             <Select.OptGroup label="Contractor Projects">
@@ -769,7 +764,7 @@ const ProjectList = () => {
                                 ))}
                             </Select.OptGroup>
                             <Select.OptGroup label="Property Deals">
-                                {propertyDeals.map(deal => (
+                                {getUniquePropertyProjects(propertyDeals).map(deal => (
                                     <Select.Option key={deal.dealId} value={deal.dealId}>
                                         {deal.projectName}
                                     </Select.Option>
@@ -806,6 +801,7 @@ const ProjectList = () => {
                             placeholder="Select a project"
                             onChange={setSelectedDeleteProject}
                             value={selectedDeleteProject}
+                            allowClear
                         >
                             <Select.OptGroup label="Contractor Projects">
                                 {projects.map(project => (
@@ -815,7 +811,7 @@ const ProjectList = () => {
                                 ))}
                             </Select.OptGroup>
                             <Select.OptGroup label="Property Deals">
-                                {propertyDeals.map(deal => (
+                                {getUniquePropertyProjects(propertyDeals).map(deal => (
                                     <Select.Option key={deal.dealId} value={deal.dealId}>
                                         {deal.projectName}
                                     </Select.Option>
@@ -823,6 +819,7 @@ const ProjectList = () => {
                             </Select.OptGroup>
                         </Select>
                     </Form.Item>
+
                     {selectedDeleteProject && (
                         <>
                             <Alert
@@ -833,7 +830,10 @@ const ProjectList = () => {
                             />
                             <div style={{ marginTop: '16px', textAlign: 'right' }}>
                                 <Space>
-                                    <Button onClick={() => setIsDeleteModalVisible(false)}>
+                                    <Button onClick={() => {
+                                        setIsDeleteModalVisible(false);
+                                        setSelectedDeleteProject('');
+                                    }}>
                                         Cancel
                                     </Button>
                                     <Button danger type="primary" htmlType="submit">
@@ -845,7 +845,6 @@ const ProjectList = () => {
                     )}
                 </Form>
             </Modal>
-
         </div>
     );
 };
