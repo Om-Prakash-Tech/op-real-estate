@@ -4,12 +4,6 @@
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
-.history-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-}
-
 .close-button {
     font-size: 24px;
     cursor: pointer;
@@ -20,8 +14,6 @@
 .close-button:hover {
     background-color: rgba(0, 0, 0, 0.05);
 }
-
-
 
 .step-description {
     display: flex;
