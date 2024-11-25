@@ -70,51 +70,53 @@ const ProjectHistory = () => {
     };
 
     return (
-        <Card
-            className="project-history-card"
-            title={
-                <div className="history-header">
-                    <Title level={4}>{project.name} - Transaction History</Title>
-                    <Button icon={<CloseOutlined />} type="text" onClick={handleClose}>
-                        Close
-                    </Button>
-                </div>
-            }
-        >
-            <Row>
-                <Col span={24}>
-                    <Steps
-                        direction="vertical"
-                        progressDot
-                        current={sortedTransactions.length - 1}
-                        items={sortedTransactions.map((transaction, index) => ({
-                            title: (
-                                <div className="step-title">
-                                    {/*<Text strong>{getContractorName(transaction.contractor)}</Text>*/}
-                                    <Text type="secondary">
-                                        {new Date(transaction.transactionDate).toLocaleDateString()}
-                                    </Text>
-                                </div>
-                            ),
-                            description: (
-                                <div className="step-description">
-                                    <Text>Amount: {transaction.transactionAmount.toLocaleString()}</Text>
-                                    {/*{transaction.transactionProof && (
+        <>
+            <Button icon={<CloseOutlined />} type="text" onClick={handleClose}>
+                Close
+            </Button>
+            <Card
+                className="project-history-card"
+                title={
+                    <div className="history-header">
+                        <Title level={4}>{project.name} - Transaction History</Title>
+                    </div>
+                }
+            >
+                <Row>
+                    <Col span={24}>
+                        <Steps
+                            direction="vertical"
+                            progressDot
+                            current={sortedTransactions.length - 1}
+                            items={sortedTransactions.map((transaction, index) => ({
+                                title: (
+                                    <div className="step-title">
+                                        {/*<Text strong>{getContractorName(transaction.contractor)}</Text>*/}
+                                        <Text type="secondary">
+                                            {new Date(transaction.transactionDate).toLocaleDateString()}
+                                        </Text>
+                                    </div>
+                                ),
+                                description: (
+                                    <div className="step-description">
+                                        <Text>Amount: {transaction.transactionAmount.toLocaleString()}</Text>
+                                        {/*{transaction.transactionProof && (
                                         <Text className="proof">Proof: {transaction.transactionProof}</Text>
                                     )}*/}
-                                </div>
-                            ),
-                            className: index === 0 ? 'latest-step' : ''
-                        }))}
-                    />
-                </Col>
-            </Row>
-            <Row>
-                <Col span={24} style={{ marginTop: '16px' }}>
-                    <Text strong>Total Amount: {totalAmount.toLocaleString()}</Text>
-                </Col>
-            </Row>
-        </Card>
+                                    </div>
+                                ),
+                                className: index === 0 ? 'latest-step' : ''
+                            }))}
+                        />
+                    </Col>
+                </Row>
+                <Row>
+                    <Col span={24} style={{ marginTop: '16px' }}>
+                        <Text strong>Total Amount: {totalAmount.toLocaleString()}</Text>
+                    </Col>
+                </Row>
+            </Card>
+        </>
     );
 };
 

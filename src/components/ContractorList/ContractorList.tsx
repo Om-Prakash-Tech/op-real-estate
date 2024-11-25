@@ -1,5 +1,5 @@
 // ContractorList.tsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Table, Button, Modal, Form, Input, Select, message, Space, Card, Row, Col, Spin } from 'antd';
 import { EditOutlined, DeleteOutlined, PlusOutlined } from '@ant-design/icons';
@@ -99,19 +99,20 @@ const ContractorList: React.FC = () => {
 
     const handleEditSubmit = async (values: any) => {
         if (!selectedContractor) return;
+        setLoading(true);
 
         try {
             await contractorsAPI.update(selectedContractor.contractorId, {
-                name: selectedContractor.name, // Keep the original name
+                name: selectedContractor.name,
                 email: values.email,
                 phone: values.phone
             });
 
             message.success('Contractor updated successfully');
             setShowEditModal(false);
+            fetchContractors();
             setSelectedContractor(null);
             form.resetFields();
-            fetchContractors();
         } catch (error) {
             console.error('Error updating contractor:', error);
             message.error('Failed to update contractor');
@@ -133,6 +134,11 @@ const ContractorList: React.FC = () => {
         }
     };
 
+    const handleAddSuccess = useCallback(async () => {
+        setShowAddModal(false);
+        await fetchContractors();
+    }, [fetchContractors]);
+
     const handleContractorSelect = (contractorId: string) => {
         const contractor = contractors.find((c) => c.contractorId === contractorId);
         if (contractor) {
@@ -147,28 +153,28 @@ const ContractorList: React.FC = () => {
 
     const renderActionButtons = () => (
         <Space className='all-buttons' style={{ marginBottom: 16, width: '100%', display: 'flex', justifyContent: 'flex-end' }}>
-                <Space className='edit-delete'>
+            <Space className='edit-delete'>
                 <Button
                     icon={<EditOutlined />}
                     onClick={() => setShowEditModal(true)}
                 >
-                        Edit Contractor
+                    Edit Contractor
                 </Button>
                 <Button
                     icon={<DeleteOutlined />}
                     danger
                     onClick={() => setShowDeleteModal(true)}
                 >
-                        Delete Contractor
-                    </Button>
-                </Space>
-                <Button
-                    type="primary"
-                    icon={<PlusOutlined />}
-                    onClick={() => setShowAddModal(true)}
-                >
-                        Add Contractor
+                    Delete Contractor
                 </Button>
+            </Space>
+            <Button
+                type="primary"
+                icon={<PlusOutlined />}
+                onClick={() => setShowAddModal(true)}
+            >
+                Add Contractor
+            </Button>
         </Space>
     );
 
@@ -256,6 +262,7 @@ const ContractorList: React.FC = () => {
                     form.resetFields();
                 }}
                 footer={null}
+                destroyOnClose
             >
                 <Form form={form} onFinish={handleEditSubmit} layout="vertical">
                     <Form.Item
@@ -309,6 +316,7 @@ const ContractorList: React.FC = () => {
                     setSelectedContractor(null);
                 }}
                 footer={null}
+                destroyOnClose
             >
                 <Form layout="vertical">
                     <Form.Item
@@ -353,12 +361,10 @@ const ContractorList: React.FC = () => {
                 open={showAddModal}
                 onCancel={() => setShowAddModal(false)}
                 footer={null}
+                destroyOnClose
             >
                 <AddContractor
-                    onSuccess={() => {
-                        setShowAddModal(false);
-                        fetchContractors();
-                    }}
+                    onSuccess={handleAddSuccess}
                 />
             </Modal>
         </div>

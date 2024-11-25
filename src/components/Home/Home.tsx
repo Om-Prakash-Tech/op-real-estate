@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Table, Modal, Checkbox, Button, message, Card, Row, Col, Spin } from 'antd';
+import { Table, Modal, Checkbox, Button, message, Card, Row, Col, Spin, Image } from 'antd';
 import { ColumnType } from 'antd/es/table';
 import { TransactionOutlined } from '@ant-design/icons';
 import SignatureCanvas from 'react-signature-canvas';
@@ -7,24 +7,23 @@ import { transactionsAPI } from '../../api';
 import './Home.css';
 import NewTransaction from '../NewTransaction/NewTransaction';
 
-
 interface Transaction {
   transactionId: string;
-  project: {
-    projectId: string;
-    projectName: string;
+  project?: {
+    projectId?: string;
+    projectName?: string;
   };
-  contractor: {
-    contractorId: string;
-    name: string;
-    email: string;
-    phone: number;
+  contractor?: {
+    contractorId?: string;
+    name?: string;
+    email?: string;
+    phone?: number;
   };
-  transactionAmount: number;
-  transactionDate: string;
-  transactionProof: string;
-  signature: string;
-  status: 'verified' | 'unverified';
+  transactionAmount?: number;
+  transactionDate?: string;
+  transactionProof?: string;
+  signature?: string;
+  status?: 'verified' | 'unverified';
 }
 
 interface HomeProps {
@@ -33,7 +32,7 @@ interface HomeProps {
 
 const Home: React.FC<HomeProps> = ({ refreshKey = 0 }) => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [modalVisible, setModalVisible] = useState(false)
+  const [modalVisible, setModalVisible] = useState(false);
   const [showNewTransactionModal, setShowNewTransactionModal] = useState(false);
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
   const [isConfirmed, setIsConfirmed] = useState(false);
@@ -44,10 +43,33 @@ const Home: React.FC<HomeProps> = ({ refreshKey = 0 }) => {
     try {
       setLoading(true);
       const transactionsResponse = await transactionsAPI.getAll();
-      setTransactions(transactionsResponse.data);
+      // Filter out any null entries and ensure all required fields have fallback values
+      const sanitizedTransactions = transactionsResponse.data
+        .filter(Boolean)
+        .map((transaction: Transaction) => ({
+          transactionId: transaction.transactionId || `temp-${Date.now()}`,
+          project: {
+            projectId: transaction.project?.projectId || '',
+            projectName: transaction.project?.projectName || 'N/A'
+          },
+          contractor: {
+            contractorId: transaction.contractor?.contractorId || '',
+            name: transaction.contractor?.name || 'N/A',
+            email: transaction.contractor?.email || 'N/A',
+            phone: transaction.contractor?.phone || 0
+          },
+          transactionAmount: transaction.transactionAmount || 0,
+          transactionDate: transaction.transactionDate || '',
+          transactionProof: transaction.transactionProof || '',
+          signature: transaction.signature || '',
+          status: transaction.status || 'unverified'
+        }));
+      setTransactions(sanitizedTransactions);
     } catch (error) {
       message.error('Failed to fetch data');
       console.error(error);
+      // Set empty array instead of leaving it undefined
+      setTransactions([]);
     } finally {
       setLoading(false);
     }
@@ -67,17 +89,17 @@ const Home: React.FC<HomeProps> = ({ refreshKey = 0 }) => {
   };
 
   const handleModalSubmit = async () => {
-    if (!isConfirmed || !selectedTransaction) return;
+    if (!isConfirmed || !selectedTransaction?.transactionId) return;
 
     try {
-      const signatureData = signatureRef?.toDataURL();
+      const signatureData = signatureRef?.toDataURL() || '';
 
       await transactionsAPI.update(selectedTransaction.transactionId, {
-        project: selectedTransaction.project.projectId,
-        contractor: selectedTransaction.contractor.contractorId,
-        transactionAmount: selectedTransaction.transactionAmount,
-        transactionDate: selectedTransaction.transactionDate,
-        transactionProof: selectedTransaction.transactionProof,
+        project: selectedTransaction.project?.projectId || '',
+        contractor: selectedTransaction.contractor?.contractorId || '',
+        transactionAmount: selectedTransaction.transactionAmount || 0,
+        transactionDate: selectedTransaction.transactionDate || '',
+        transactionProof: selectedTransaction.transactionProof || '',
         signature: signatureData
       });
 
@@ -99,6 +121,7 @@ const Home: React.FC<HomeProps> = ({ refreshKey = 0 }) => {
       dataIndex: ['project', 'projectName'],
       key: 'projectName',
       align: 'left',
+      render: (value: string) => value || 'N/A'
     },
     {
       title: 'Contractor Name',
@@ -106,6 +129,7 @@ const Home: React.FC<HomeProps> = ({ refreshKey = 0 }) => {
       dataIndex: ['contractor', 'name'],
       key: 'contractorName',
       fixed: 'left',
+      render: (value: string) => value || 'N/A'
     },
     {
       title: 'Phone',
@@ -113,6 +137,7 @@ const Home: React.FC<HomeProps> = ({ refreshKey = 0 }) => {
       dataIndex: ['contractor', 'phone'],
       key: 'contractorPhone',
       align: 'center',
+      render: (value: number) => value || 'N/A'
     },
     {
       title: 'Email',
@@ -120,6 +145,7 @@ const Home: React.FC<HomeProps> = ({ refreshKey = 0 }) => {
       dataIndex: ['contractor', 'email'],
       key: 'contractorEmail',
       align: 'center',
+      render: (value: string) => value || 'N/A'
     },
     {
       title: 'Transaction Amount',
@@ -127,7 +153,29 @@ const Home: React.FC<HomeProps> = ({ refreshKey = 0 }) => {
       dataIndex: 'transactionAmount',
       key: 'transactionAmount',
       align: 'center',
-      render: (value: number) => `₹${value.toLocaleString()}`
+      render: (value: number) => value ? `₹${value.toLocaleString()}` : '₹0'
+    },
+    {
+      title: 'Signature',
+      width: 200,
+      key: 'signatureImage',
+      align: 'center',
+      render: (_, record: Transaction) => {
+        return record.signature ? (
+          <Image
+            src={record.signature}
+            alt="Signature"
+            style={{ maxWidth: '150px', maxHeight: '60px' }}
+            preview={{
+              mask: 'View Signature',
+              maskClassName: 'signature-preview-mask'
+            }}
+            fallback="/placeholder-signature.png" // Add a placeholder image
+          />
+        ) : (
+          'No signature'
+        );
+      }
     },
     {
       title: 'Signature Status',
@@ -142,13 +190,14 @@ const Home: React.FC<HomeProps> = ({ refreshKey = 0 }) => {
               cursor: record.status === 'unverified' ? 'pointer' : 'default',
             }}
           >
-            {record.status}
+            {record.status || 'unverified'}
           </a>
         );
       },
       align: 'center',
     },
   ];
+
 
   const renderMobileCards = () => {
     return (
@@ -159,7 +208,7 @@ const Home: React.FC<HomeProps> = ({ refreshKey = 0 }) => {
               className={`transaction-card ${selectedTransaction?.transactionId === transaction.transactionId ? 'selected' : ''}`}
             >
               <div className='header'>
-                <div className="cont-name">{transaction.contractor.name}</div>
+                <div className="cont-name">{transaction.contractor?.name || 'N/A'}</div>
                 <Button
                   className='edit-button'
                   type="primary"
@@ -173,21 +222,39 @@ const Home: React.FC<HomeProps> = ({ refreshKey = 0 }) => {
               <div className="divider" />
               <div className="amount-item">
                 <span className="label">Project Name:</span>
-                <span className="value">{transaction.project.projectName}</span>
+                <span className="value">{transaction.project?.projectName || 'N/A'}</span>
               </div>
               <div className="contact-info">
                 <div className="info-item">
                   <span className="label">Phone:</span>
-                  <span className="value">{transaction.contractor.phone}</span>
+                  <span className="value">{transaction.contractor?.phone || 'N/A'}</span>
                 </div>
                 <div className="info-item">
                   <span className="label">Email:</span>
-                  <span className="value">{transaction.contractor.email}</span>
+                  <span className="value">{transaction.contractor?.email || 'N/A'}</span>
                 </div>
               </div>
               <div className="amount-item">
                 <span className="label">Transaction Amount:</span>
-                <span className="value">₹{transaction.transactionAmount.toLocaleString()}</span>
+                <span className="value">₹{(transaction.transactionAmount || 0).toLocaleString()}</span>
+              </div>
+
+              <div className="signature-display">
+                <span className="label">Signature:</span>
+                {transaction.signature ? (
+                  <Image
+                    src={transaction.signature}
+                    alt="Signature"
+                    style={{ maxWidth: '100%', maxHeight: '60px', marginTop: '8px' }}
+                    preview={{
+                      mask: 'View Signature',
+                      maskClassName: 'signature-preview-mask'
+                    }}
+                    fallback="/placeholder-signature.png" // Add a placeholder image
+                  />
+                ) : (
+                  <span className="value">No signature</span>
+                )}
               </div>
 
               <div className="divider" />
@@ -199,7 +266,7 @@ const Home: React.FC<HomeProps> = ({ refreshKey = 0 }) => {
                 }}
               >
                 <span className="label">Signature Status:</span>
-                {transaction.status}
+                {transaction.status || 'unverified'}
               </div>
             </Card>
           </Col>
@@ -223,21 +290,23 @@ const Home: React.FC<HomeProps> = ({ refreshKey = 0 }) => {
       <div className="table-container">
         {window.innerWidth <= 768 ? (
           <Spin spinning={loading} size="large" className='mobile-loading'>
-            {renderMobileCards()}
+            {transactions.length > 0 ? renderMobileCards() : (
+              <div className="no-data">No transactions found</div>
+            )}
           </Spin>
         ) : (
-          <>
-            <Table
-              loading={loading}
-              pagination={false}
-              columns={columns}
-              dataSource={transactions}
-              scroll={{
-                x: 'max-content',
-                y: 'calc(100vh - 230px)',
-              }}
-            />
-          </>
+          <Table
+            loading={loading}
+            pagination={false}
+            columns={columns}
+            dataSource={transactions}
+            rowKey="transactionId"
+            locale={{ emptyText: 'No transactions found' }}
+            scroll={{
+              x: 'max-content',
+              y: 'calc(100vh - 230px)',
+            }}
+          />
         )}
       </div>
 
@@ -253,22 +322,13 @@ const Home: React.FC<HomeProps> = ({ refreshKey = 0 }) => {
             key="submit"
             type="primary"
             onClick={handleModalSubmit}
-            disabled={!isConfirmed || signatureRef?.isEmpty()}
+            disabled={!isConfirmed}
           >
             Submit
           </Button>,
         ]}
       >
         <div className="verification-modal">
-          <Checkbox
-            checked={isConfirmed}
-            onChange={(e) => setIsConfirmed(e.target.checked)}
-          >
-            I hereby confirm that the amount of ₹
-            {selectedTransaction?.transactionAmount.toLocaleString()} has
-            been received and I acknowledge receipt of the payment.
-          </Checkbox>
-
           <div className="signature-section">
             <h4>Please draw your signature below:</h4>
             <div className="signature-container">
@@ -282,6 +342,14 @@ const Home: React.FC<HomeProps> = ({ refreshKey = 0 }) => {
               />
             </div>
           </div>
+          <Checkbox
+            checked={isConfirmed}
+            onChange={(e) => setIsConfirmed(e.target.checked)}
+          >
+            I hereby confirm that the amount of ₹
+            {selectedTransaction?.transactionAmount?.toLocaleString() || 0} has
+            been received and I acknowledge receipt of the payment.
+          </Checkbox>
         </div>
         <Button size="small" onClick={() => signatureRef?.clear()}>
           Clear Signature
@@ -300,7 +368,7 @@ const Home: React.FC<HomeProps> = ({ refreshKey = 0 }) => {
           <NewTransaction
             onTransactionSuccess={() => {
               setShowNewTransactionModal(false);
-              fetchData(); // Refresh data after successful transaction
+              fetchData();
             }}
           />
         </Modal>

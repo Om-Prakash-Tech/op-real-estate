@@ -18,6 +18,7 @@ import AddContractor from './components/AddContractor/AddContractor';
 import ProjectList from './components/ProjectList/ProjectList';
 import ProjectHistory from './components/ProjectHistory/ProjectHistory';
 import BuySell from './components/BuySell/BuySell';
+import DealsHistory from './components/DealsHistory/DealsHistory';
 import ContractorList from './components/ContractorList/ContractorList';
 import ContractorHistory from './components/ContractorHistory/ContractorHistory';
 import { getAuth, onAuthStateChanged, signOut } from 'firebase/auth';
@@ -159,7 +160,8 @@ function App() {
                     collapsed={collapsed}
                     style={{
                       overflow: 'auto',
-                      height: '100vh',
+                      minHeight:'100vh',
+                      maxHeight:'200vh'
                     }}
                   >
                     <div className="logo" />
@@ -210,6 +212,7 @@ function App() {
                       <Route path="/buysell" element={<BuySell />} />
                       <Route path="/contractors" element={<ContractorList />} />
                       <Route path="/contractor-history/:contractorId" element={<ContractorHistory />} />
+                      <Route path="/deals-history/:customerName" element={<DealsHistory />} />
                     </Routes> 
                   </Content>
 

@@ -26,10 +26,11 @@
         margin-bottom: 24px;
     }
 
-    .section-title .section-title-2 {
-        margin-bottom: 12px;
-        font-size: 1.5rem;
-        font-weight: 500;
+    .section-title-1 {
+        margin-top: -2.5rem;
+    }
+
+    .section-title-1 .section-title-2 {
     }
 
     .project-card {
@@ -61,7 +62,7 @@
         margin-top: 20px;
     }
 
-    .section-title {
+    .section-title-1 {
         margin-bottom: 12px;
         font-size: 1.5rem;
         font-weight: 500;

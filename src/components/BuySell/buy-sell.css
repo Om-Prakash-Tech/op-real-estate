@@ -27,6 +27,18 @@
     width: 100px;
 }
 
+.signature-section {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.signature-container {
+    border: 1px solid #d9d9d9;
+    border-radius: 4px;
+    margin-bottom: 10px;
+}
 @media (max-width: 768px) {
     .buy-sell-container {
         padding: 2px;

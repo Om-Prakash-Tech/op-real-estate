@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
     Table,
     Button,
@@ -13,10 +13,14 @@ import {
     Space,
     Radio,
     Alert,
-    Spin
+    Spin,
+    Checkbox,
+    Upload,
+    Image
 } from 'antd';
-import { EditOutlined, DeleteOutlined } from '@ant-design/icons';
+import { EditOutlined, DeleteOutlined, PlusOutlined, UploadOutlined } from '@ant-design/icons';
 import { useMediaQuery } from '@mui/material';
+import SignatureCanvas from 'react-signature-canvas';
 import { dealsAPI } from '../../api';
 import './buy-sell.css';
 
@@ -31,16 +35,26 @@ interface PropertyDeal {
     transactionDate: string;
     createdAt: string;
     updatedAt: string;
+    status: 'verified' | 'unverified';
+    signature: string;
+    paymentReceipt: string;
 }
 
 const BuySell = () => {
     const [deals, setDeals] = useState<PropertyDeal[]>([]);
     const [isEditModalVisible, setIsEditModalVisible] = useState(false);
     const [isDeleteModalVisible, setIsDeleteModalVisible] = useState(false);
+    const [isNewTransactionModalVisible, setIsNewTransactionModalVisible] = useState(false);
+    const [isSignatureModalVisible, setIsSignatureModalVisible] = useState(false);
     const [selectedDeal, setSelectedDeal] = useState<PropertyDeal | null>(null);
     const [customers, setCustomers] = useState<string[]>([]);
     const [loading, setLoading] = useState(false);
+    const [confirmChecked, setConfirmChecked] = useState(false);
+    const [uploadedImage, setUploadedImage] = useState<string>('');
+
+    const signatureRef = useRef<SignatureCanvas>(null);
     const [editForm] = Form.useForm();
+    const [newTransactionForm] = Form.useForm();
     const isMobile = useMediaQuery('(max-width:768px)');
 
     const fetchDeals = async () => {
@@ -49,14 +63,12 @@ const BuySell = () => {
             const response = await dealsAPI.getAll();
             const dealsData = response.data.map((deal: PropertyDeal) => ({
                 key: deal.dealId,
-                ...deal
+                ...deal,
+                // Ensure status is set if it's missing in the database
+                status: deal.status || 'unverified'
             }));
             setDeals(dealsData);
-            const getUniqueCustomers = (deals: PropertyDeal[]): string[] => {
-                return Array.from(new Set(deals.map(deal => deal.name)));
-            };
-
-            const uniqueCustomers = getUniqueCustomers(dealsData);
+            const uniqueCustomers: string[] = Array.from(new Set(dealsData.map((deal: PropertyDeal) => deal.name)));
             setCustomers(uniqueCustomers);
         } catch (error) {
             console.error('Error fetching deals:', error);
@@ -70,6 +82,7 @@ const BuySell = () => {
         fetchDeals();
     }, []);
 
+
     const columns = [
         {
             title: 'Customer Name',
@@ -82,11 +95,6 @@ const BuySell = () => {
             key: 'projectName',
         },
         {
-            title: 'Customer Number',
-            dataIndex: 'phone',
-            key: 'phone',
-        },
-        {
             title: 'Transaction Type',
             dataIndex: 'dealType',
             key: 'dealType',
@@ -96,67 +104,211 @@ const BuySell = () => {
             title: 'Transaction Amount',
             dataIndex: 'transactionAmount',
             key: 'transactionAmount',
-            render: (amount: number) => amount?.toLocaleString(),
+            render: (amount: number) => `₹${amount?.toLocaleString()}`,
         },
         {
             title: 'Total Deal Amount',
             dataIndex: 'dealAmount',
             key: 'dealAmount',
-            render: (amount: number) => amount?.toLocaleString(),
+            render: (amount: number) => `₹${amount?.toLocaleString()}`,
+        },
+        {
+            title: 'Status',
+            dataIndex: 'status',
+            key: 'status',
+            render: (status: string, record: PropertyDeal) => {
+                return (
+                    <a
+                        onClick={() => handleStatusClick(record)}
+                        style={{
+                            color: record.status === 'unverified' ? '#1890ff' : '#52c41a',
+                            cursor: record.status === 'unverified' ? 'pointer' : 'default',
+                        }}
+                    >
+                        {record.status || 'unverified'}
+                    </a >
+                );
+            },
+        },
+        {
+            title: 'Signature',
+            dataIndex: 'signature',
+            key: 'signature',
+            render: (signature: string) =>
+                signature ? (
+                    <Image
+                        src={signature}
+                        alt="Signature"
+                        style={{ maxWidth: '100px', maxHeight: '50px' }}
+                        preview={{
+                            mask: 'View Signature',
+                        }}
+                        fallback="/placeholder-signature.png"
+                    />
+                ) : '-'
         },
     ];
 
-    const handleEditClick = (deal: PropertyDeal) => {
+    const handleStatusClick = (deal: PropertyDeal) => {
         setSelectedDeal(deal);
-        editForm.setFieldsValue({
-            ...deal,
-            dealType: deal.dealType.toLowerCase(),
-        });
+        setIsSignatureModalVisible(true);
+    };
+
+    const handleSignatureSubmit = async () => {
+        if (!selectedDeal || !signatureRef.current || !confirmChecked) return;
+
+        try {
+            const signatureDataUrl = signatureRef.current.toDataURL();
+
+            await dealsAPI.update(selectedDeal.dealId, {
+                ...selectedDeal,
+                status: 'verified',
+                signature: signatureDataUrl,
+            });
+
+            message.success('Signature verified successfully');
+            setIsSignatureModalVisible(false);
+            setConfirmChecked(false);
+            signatureRef.current.clear();
+            fetchDeals();
+        } catch (error) {
+            console.error('Error updating signature:', error);
+            message.error('Failed to verify signature');
+        }
+    };
+
+    const handleNewTransaction = async (values: any) => {
+        try {
+            const newDeal = {
+                dealAmount: Number(values.dealAmount),
+                dealType: values.dealType,
+                name: values.name,
+                phone: Number(values.phone) || "",
+                projectName: values.projectName,
+                signature: "",
+                status: "unverified",
+                transactionAmount: Number(values.transactionAmount),
+                transactionDate: new Date().toISOString().split('T')[0]
+            };
+
+            await dealsAPI.create(newDeal);
+            message.success('New transaction added successfully');
+            setIsNewTransactionModalVisible(false);
+            newTransactionForm.resetFields();
+            setUploadedImage('');
+            fetchDeals();
+        } catch (error) {
+            console.error('Error adding new transaction:', error);
+            message.error('Failed to add new transaction');
+        }
+    };
+
+    const handleEditClick = () => {
+        editForm.resetFields();
         setIsEditModalVisible(true);
+    };
+
+    const handleCustomerSelectInEdit = (customerName: string) => {
+        const customerDeal = deals.find(deal => deal.name === customerName);
+        if (customerDeal) {
+            editForm.setFieldsValue({
+                name: customerDeal.name,
+                projectName: customerDeal.projectName,
+                dealType: customerDeal.dealType,
+                dealAmount: customerDeal.dealAmount
+            });
+            setSelectedDeal(customerDeal);
+        }
     };
 
     const handleEditSubmit = async (values: any) => {
         try {
             if (!selectedDeal) return;
+            setLoading(true);
 
-            const updatedDeal = {
-                ...values,
-                transactionAmount: Number(values.transactionAmount),
-                dealAmount: Number(values.dealAmount),
-                transactionDate: new Date().toISOString(),
-            };
+            // Find all deals with the same customer name
+            const dealsToUpdate = deals.filter(deal => deal.name === values.name);
 
-            await dealsAPI.update(selectedDeal.dealId, updatedDeal);
-            message.success('Deal updated successfully');
+            // Update each deal with new values except transactionAmount
+            const updatePromises = dealsToUpdate.map(deal => {
+                const updatedDeal = {
+                    ...deal,
+                    projectName: values.projectName,
+                    dealType: values.dealType,
+                    dealAmount: Number(values.dealAmount),
+                    // Keep the original transactionAmount
+                    transactionAmount: deal.transactionAmount,
+                    transactionDate: new Date().toISOString(),
+                };
+                return dealsAPI.update(deal.dealId, updatedDeal);
+            });
+
+            await Promise.all(updatePromises);
+            message.success('All deals for this customer updated successfully');
             setIsEditModalVisible(false);
             editForm.resetFields();
             setSelectedDeal(null);
             fetchDeals();
         } catch (error) {
-            console.error('Error updating deal:', error);
-            message.error('Failed to update deal');
+            console.error('Error updating deals:', error);
+            message.error('Failed to update deals');
+        } finally {
+            setLoading(false);
         }
     };
 
     const handleDelete = async () => {
         try {
             if (!selectedDeal) return;
+            setLoading(true);
 
-            await dealsAPI.delete(selectedDeal.dealId);
-            message.success('Deal deleted successfully');
+            // Find all deals with the same customer name
+            const dealsToDelete = deals.filter(deal => deal.name === selectedDeal.name);
+
+            // Delete all deals for the selected customer
+            const deletePromises = dealsToDelete.map(deal =>
+                dealsAPI.delete(deal.dealId)
+            );
+
+            await Promise.all(deletePromises);
+            message.success('All deals for this customer deleted successfully');
             setIsDeleteModalVisible(false);
             setSelectedDeal(null);
             fetchDeals();
         } catch (error) {
-            console.error('Error deleting deal:', error);
-            message.error('Failed to delete deal');
+            console.error('Error deleting deals:', error);
+            message.error('Failed to delete deals');
+        } finally {
+            setLoading(false);
         }
     };
 
     const handleCustomerSelect = (customerName: string) => {
         const selectedCustomerDeal = deals.find(deal => deal.name === customerName);
         if (selectedCustomerDeal) {
-            editForm.setFieldsValue(selectedCustomerDeal);
+            // Only set specific fields, ensuring status isn't copied
+            newTransactionForm.setFieldsValue({
+                name: selectedCustomerDeal.name,
+                projectName: selectedCustomerDeal.projectName,
+                dealType: selectedCustomerDeal.dealType,
+                dealAmount: selectedCustomerDeal.dealAmount,
+                phone: selectedCustomerDeal.phone
+            });
+        }
+    };
+
+    const handleImageUpload = async (file: File) => {
+        try {
+            const reader = new FileReader();
+            reader.onload = () => {
+                setUploadedImage(reader.result as string);
+            };
+            reader.readAsDataURL(file);
+            return false; // Prevent automatic upload
+        } catch (error) {
+            console.error('Error uploading image:', error);
+            message.error('Failed to upload image');
+            return false;
         }
     };
 
@@ -168,7 +320,7 @@ const BuySell = () => {
                     <Space>
                         <Button
                             icon={<EditOutlined />}
-                            onClick={() => handleEditClick(deal)}
+                            onClick={() => handleEditClick}
                         />
                         <Button
                             icon={<DeleteOutlined />}
@@ -182,10 +334,29 @@ const BuySell = () => {
                 </div>
                 <div className="deal-details">
                     <p>Project: <strong>{deal.projectName}</strong></p>
-                    <p>Phone: <strong>{deal.phone}</strong></p>
                     <p>Type: <strong>{deal.dealType}</strong></p>
-                    <p>Amount: <strong>{deal.transactionAmount.toLocaleString()}</strong></p>
-                    <p>Total Deal: <strong>{deal.dealAmount.toLocaleString()}</strong></p>
+                    <p>Amount: <strong>₹{deal.transactionAmount.toLocaleString()}</strong></p>
+                    <p>Total Deal: <strong>₹{deal.dealAmount.toLocaleString()}</strong></p>
+                    <p>Status: <strong>
+                        {(deal.status || 'unverified') === 'unverified' ? (
+                            <Button
+                                type="link"
+                                onClick={() => handleStatusClick(deal)}
+                                style={{ padding: 0 }}
+                            >
+                                Unverified
+                            </Button>
+                        ) : (
+                            <span style={{ color: '#52c41a' }}>Verified</span>
+                        )}
+                    </strong></p>
+                    {deal.signature && (
+                        <p>Signature: <img
+                            src={deal.signature}
+                            alt="Signature"
+                            style={{ maxWidth: '100px', maxHeight: '50px' }}
+                        /></p>
+                    )}
                 </div>
             </Card>
         </Col>
@@ -198,14 +369,15 @@ const BuySell = () => {
                     <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '16px' }}>
                         <Space>
                             <Button
+                                icon={<PlusOutlined />}
+                                type="primary"
+                                onClick={() => setIsNewTransactionModalVisible(true)}
+                            >
+                                New Transaction
+                            </Button>
+                            <Button
                                 icon={<EditOutlined />}
-                                onClick={() => {
-                                    if (deals.length > 0) {
-                                        setSelectedDeal(deals[0]);
-                                        editForm.setFieldsValue(deals[0]);
-                                        setIsEditModalVisible(true);
-                                    }
-                                }}
+                                onClick={handleEditClick}
                             >
                                 Edit Deal
                             </Button>
@@ -223,29 +395,25 @@ const BuySell = () => {
                             </Button>
                         </Space>
                     </div>
-                        <Table
-                            columns={columns}
-                            dataSource={deals}
-                            pagination={false}
-                            loading={loading}
-                            className="deals-table"
-                            onRow={(record) => ({
-                                onClick: () => {
-                                    setSelectedDeal(record);
-                                    editForm.setFieldsValue(record);
-                                },
-                                style: { cursor: 'pointer' }
-                            })}
-                        />
+                    <Table
+                        columns={columns}
+                        dataSource={deals}
+                        pagination={false}
+                        loading={loading}
+                        className="deals-table"
+                    />
                 </>
             ) : (
                 <div style={{ position: 'relative', minHeight: '200px' }}>
-                    <Spin spinning={loading} style={{
-                        position: loading && deals.length === 0 ? 'absolute' : 'static',
-                        top: '50%',
-                        left: '50%',
-                        transform: 'translate(-50%, -50%)'
-                    }}>
+                    <Button
+                        icon={<PlusOutlined />}
+                        type="primary"
+                        onClick={() => setIsNewTransactionModalVisible(true)}
+                        style={{ marginBottom: '16px', width: '100%' }}
+                    >
+                        New Transaction
+                    </Button>
+                    <Spin spinning={loading}>
                         <Row gutter={[16, 16]} className="mobile-cards">
                             {deals.map(renderMobileCard)}
                         </Row>
@@ -253,9 +421,167 @@ const BuySell = () => {
                 </div>
             )}
 
+            {/* New Transaction Modal */}
+            <Modal
+                title="New Transaction"
+                open={isNewTransactionModalVisible}
+                onCancel={() => {
+                    setIsNewTransactionModalVisible(false);
+                    newTransactionForm.resetFields();
+                    setUploadedImage('');
+                }}
+                footer={null}
+            >
+                <Form
+                    form={newTransactionForm}
+                    onFinish={handleNewTransaction}
+                    layout="vertical"
+                >
+                    <Form.Item
+                        name="name"
+                        label="Customer Name"
+                        rules={[{ required: true, message: 'Please enter customer name' }]}
+                    >
+                        <Select onChange={handleCustomerSelect}>
+                            {customers.map(customer => (
+                                <Select.Option key={customer} value={customer}>
+                                    {customer}
+                                </Select.Option>
+                            ))}
+                        </Select>
+                    </Form.Item>
+
+                    <Form.Item
+                        name="phone"
+                        label="Phone Number"
+                        rules={[{ required: true, message: 'Please enter phone number' }]}
+                    >
+                        <Input />
+                    </Form.Item>
+
+                    <Form.Item
+                        name="projectName"
+                        label="Project Name"
+                        rules={[{ required: true, message: 'Please enter project name' }]}
+                    >
+                        <Input />
+                    </Form.Item>
+
+                    <Form.Item
+                        name="dealType"
+                        label="Transaction Type"
+                        rules={[{ required: true, message: 'Please select transaction type' }]}
+                    >
+                        <Radio.Group>
+                            <Radio value="buy">Buy</Radio>
+                            <Radio value="sell">Sell</Radio>
+                        </Radio.Group>
+                    </Form.Item>
+
+                    <Form.Item
+                        name="transactionAmount"
+                        label="Transaction Amount"
+                        rules={[{ required: true, message: 'Please enter transaction amount' }]}
+                    >
+                        <Input type="number" />
+                    </Form.Item>
+
+                    <Form.Item
+                        name="dealAmount"
+                        label="Total Deal Amount"
+                        rules={[{ required: true, message: 'Please enter total deal amount' }]}
+                    >
+                        <Input type="number" />
+                    </Form.Item>
+
+                    <Form.Item
+                        name="paymentReceipt"
+                        label="Payment Receipt"
+                    >
+                        <Upload
+                            beforeUpload={handleImageUpload}
+                            accept="image/*"
+                            maxCount={1}
+                            showUploadList={true}
+                        >
+                            <Button icon={<UploadOutlined />}>Upload Receipt</Button>
+                        </Upload>
+                    </Form.Item>
+
+                    <Form.Item>
+                        <Button type="primary" htmlType="submit">
+                            Submit Transaction
+                        </Button>
+                    </Form.Item>
+                </Form>
+            </Modal>
+
+            {/* Signature Modal */}
+            <Modal
+                title="Verify Transaction"
+                open={isSignatureModalVisible}
+                onCancel={() => {
+                    setIsSignatureModalVisible(false);
+                    setConfirmChecked(false);
+                    if (signatureRef.current) {
+                        signatureRef.current.clear();
+                    }
+                }}
+                footer={[
+                    <Button
+                        key="cancel"
+                        onClick={() => {
+                            setIsSignatureModalVisible(false);
+                            setConfirmChecked(false);
+                            if (signatureRef.current) {
+                                signatureRef.current.clear();
+                            }
+                        }}
+                    >
+                        Cancel
+                    </Button>,
+                    <Button
+                        key="submit"
+                        type="primary"
+                        onClick={handleSignatureSubmit}
+                        disabled={!confirmChecked}
+                    >
+                        Verify
+                    </Button>
+                ]}
+            >
+                <div className="signature-section">
+                    <h4>Please draw your signature below:</h4>
+                    <div className="signature-container">
+                        <SignatureCanvas
+                            ref={signatureRef}
+                            canvasProps={{
+                                width: 500,
+                                height: 200,
+                                className: 'signature-canvas',
+                            }}
+                        />
+                    </div>
+
+                </div>
+                <Button
+                    size="small"
+                    onClick={() => signatureRef.current?.clear()}
+                    style={{ marginTop: '8px', marginBottom: '8px' }}
+                >
+                    Clear
+                </Button>
+                <Checkbox
+                    checked={confirmChecked}
+                    onChange={(e) => setConfirmChecked(e.target.checked)}
+                >
+                    I hereby confirm that the amount of ₹{selectedDeal?.transactionAmount.toLocaleString()} has been received and I acknowledge receipt of the payment.
+                </Checkbox>
+            </Modal>
+
             {/* Edit Modal */}
             <Modal
-                title="Edit Deal"
+                title="Edit Deals"
                 open={isEditModalVisible}
                 onCancel={() => {
                     setIsEditModalVisible(false);
@@ -272,19 +598,11 @@ const BuySell = () => {
                     <Form.Item
                         name="name"
                         label="Customer Name"
-                        rules={[{ required: true }]}
+                        rules={[{ required: true, message: 'Please select a customer' }]}
                     >
                         <Select
-                            onChange={handleCustomerSelect}
-                            dropdownRender={(menu) => (
-                                <>
-                                    {menu}
-                                    <Input
-                                        placeholder="Edit customer name"
-                                        onChange={(e) => editForm.setFieldValue('name', e.target.value)}
-                                    />
-                                </>
-                            )}
+                            placeholder="Select a customer"
+                            onChange={handleCustomerSelectInEdit}
                         >
                             {customers.map(customer => (
                                 <Select.Option key={customer} value={customer}>
@@ -294,60 +612,48 @@ const BuySell = () => {
                         </Select>
                     </Form.Item>
 
-                    <Form.Item
-                        name="projectName"
-                        label="Project Name"
-                        rules={[{ required: true }]}
-                    >
-                        <Input />
-                    </Form.Item>
+                    {selectedDeal && (
+                        <>
+                            <Form.Item
+                                name="projectName"
+                                label="Project Name"
+                                rules={[{ required: true }]}
+                            >
+                                <Input />
+                            </Form.Item>
 
-                    <Form.Item
-                        name="phone"
-                        label="Customer Number"
-                        rules={[{ required: true }]}
-                    >
-                        <Input />
-                    </Form.Item>
+                            <Form.Item
+                                name="dealType"
+                                label="Transaction Type"
+                                rules={[{ required: true }]}
+                            >
+                                <Radio.Group>
+                                    <Radio value="buy">Buy</Radio>
+                                    <Radio value="sell">Sell</Radio>
+                                </Radio.Group>
+                            </Form.Item>
 
-                    <Form.Item
-                        name="dealType"
-                        label="Transaction Type"
-                        rules={[{ required: true }]}
-                    >
-                        <Radio.Group>
-                            <Radio value="buy">Buy</Radio>
-                            <Radio value="sell">Sell</Radio>
-                        </Radio.Group>
-                    </Form.Item>
+                            <Form.Item
+                                name="dealAmount"
+                                label="Total Deal Amount"
+                                rules={[{ required: true }]}
+                            >
+                                <Input type="number" />
+                            </Form.Item>
 
-                    <Form.Item
-                        name="transactionAmount"
-                        label="Transaction Amount"
-                        rules={[{ required: true }]}
-                    >
-                        <Input type="number" />
-                    </Form.Item>
-
-                    <Form.Item
-                        name="dealAmount"
-                        label="Total Deal Amount"
-                        rules={[{ required: true }]}
-                    >
-                        <Input type="number" />
-                    </Form.Item>
-
-                    <Form.Item>
-                        <Button type="primary" htmlType="submit">
-                            Update Deal
-                        </Button>
-                    </Form.Item>
+                            <Form.Item>
+                                <Button type="primary" htmlType="submit">
+                                    Update All Deals
+                                </Button>
+                            </Form.Item>
+                        </>
+                    )}
                 </Form>
             </Modal>
 
             {/* Delete Modal */}
             <Modal
-                title="Delete Deal"
+                title="Delete Deals"
                 open={isDeleteModalVisible}
                 onCancel={() => {
                     setIsDeleteModalVisible(false);
@@ -357,21 +663,21 @@ const BuySell = () => {
             >
                 <Form layout="vertical">
                     <Form.Item
-                        name="dealSelect"
-                        label="Select Deal to Delete"
-                        rules={[{ required: true, message: 'Please select a deal!' }]}
+                        name="customerName"
+                        label="Select Customer"
+                        rules={[{ required: true, message: 'Please select a customer!' }]}
                     >
                         <Select
-                            placeholder="Select a deal"
+                            placeholder="Select a customer"
                             onChange={(value) => {
-                                const deal = deals.find(d => d.dealId === value);
+                                const deal = deals.find(d => d.name === value);
                                 setSelectedDeal(deal || null);
                             }}
-                            value={selectedDeal?.dealId}
+                            value={selectedDeal?.name}
                         >
-                            {deals.map((deal) => (
-                                <Select.Option key={deal.dealId} value={deal.dealId}>
-                                    {deal.name} - {deal.projectName}
+                            {customers.map((customer) => (
+                                <Select.Option key={customer} value={customer}>
+                                    {customer}
                                 </Select.Option>
                             ))}
                         </Select>
@@ -383,13 +689,7 @@ const BuySell = () => {
                                 message="Delete Confirmation"
                                 description={
                                     <div>
-                                        <p>Are you sure you want to delete the following deal?</p>
-                                        <ul style={{ marginTop: '8px' }}>
-                                            <li><strong>Customer Name:</strong> {selectedDeal.name}</li>
-                                            <li><strong>Project Name:</strong> {selectedDeal.projectName}</li>
-                                            <li><strong>Transaction Type:</strong> {selectedDeal.dealType}</li>
-                                            <li><strong>Amount:</strong> {selectedDeal.transactionAmount.toLocaleString()}</li>
-                                        </ul>
+                                        <p>Are you sure you want to delete the deal for customer: <strong>{selectedDeal.name}</strong>?</p>
                                     </div>
                                 }
                                 type="warning"
@@ -414,6 +714,7 @@ const BuySell = () => {
                     )}
                 </Form>
             </Modal>
+
         </div>
     );
 };
