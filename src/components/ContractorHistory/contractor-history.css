@@ -27,7 +27,7 @@
 
 @media (max-width: 768px) {
     .contractor-history-card {
-        margin: 10px;
+        margin: 12px;
     }
 
     .step-title {
@@ -35,5 +35,4 @@
         align-items: flex-start;
         gap: 4px;
     }
-
 }
