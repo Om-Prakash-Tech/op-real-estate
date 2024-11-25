@@ -43,8 +43,8 @@ const DealsHistory = () => {
             <Card
                 className="project-history-card"
                 title={
-                    <div className="history-header">
-                        <Title level={4}>{sortedTransactions[0]?.name} - Transaction History</Title>
+                    <div style={{ wordWrap: 'break-word', whiteSpace: 'normal', fontSize: '1.3rem', paddingTop: '5px' }}>
+                        {sortedTransactions[0]?.name} - Transaction History
                     </div>
                 }
             >
