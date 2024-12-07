@@ -3,6 +3,11 @@
     .mobile-cards {
         padding: 0;
     }
+        .header {
+            display: flex;
+            flex-direction: row;
+            justify-content: space-between;
+        }
 
     .contractor-list-card {
         box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
@@ -21,6 +26,7 @@
         font-weight: 600;
         margin-bottom: 10px;
         margin-top: -60px;
+        max-width: 12rem;
     }
 
     .contractor-details .detail-item {
@@ -40,9 +46,9 @@
 
     /* Card actions styling */
     .card-actions {
-        position: absolute;
-        top: 12px;
-        right: 12px;
+        display: flex;
+        flex-direction: row;
+        right: 0;
     }
 
     .card-actions .ant-btn {

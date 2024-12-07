@@ -187,8 +187,11 @@ const ContractorList: React.FC = () => {
                         <Card
                             className={`contractor-list-card ${selectedContractor?.contractorId === contractor.contractorId ? 'selected' : ''}`}
                             onClick={() => handleContractorClick(contractor)}
-                            //onClick={() => handleContractorSelect(contractor.contractorId)}
-                            extra={
+                        //onClick={() => handleContractorSelect(contractor.contractorId)}                            
+                        >
+                            <div className='card-header'>
+
+                                <h3 className="contractor-name">{contractor.name}</h3>
                                 <Space className="card-actions">
                                     <Button
                                         icon={<EditOutlined />}
@@ -208,9 +211,7 @@ const ContractorList: React.FC = () => {
                                         }}
                                     />
                                 </Space>
-                            }
-                        >
-                            <h3 className="contractor-name">{contractor.name}</h3>
+                            </div>
                             <div className="contractor-details">
                                 <div className="detail-item">
                                     <span className="label">Phone:</span>
@@ -235,7 +236,8 @@ const ContractorList: React.FC = () => {
 
             {window.innerWidth <= 768 ? (
                 <Spin spinning={loading} size="large" className='mobile-loading'>
-                    {renderMobileCards()}
+                    {contractors.length > 0 ? renderMobileCards() : (
+                        <div className="no-data">No Contractors found</div>)}
                 </Spin>
             ) : (
                 <Table

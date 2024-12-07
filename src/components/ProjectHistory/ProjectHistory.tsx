@@ -77,8 +77,8 @@ const ProjectHistory = () => {
             <Card
                 className="project-history-card"
                 title={
-                    <div className="history-header">
-                        <Title level={4}>{project.name} - Transaction History</Title>
+                    <div style={{ wordWrap: 'break-word', whiteSpace: 'normal', fontSize: '1.3rem', paddingTop: '5px' }}>
+                        {project.name} - Transaction History
                     </div>
                 }
             >
