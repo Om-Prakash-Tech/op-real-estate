@@ -11,6 +11,7 @@ import {
 } from '../../api';
 import './project-list.css';
 import { ColumnType } from 'antd/es/table';
+import { NumberInput } from './IndianNumberInput';
 
 interface Contractor {
     contractorId: string;
@@ -181,8 +182,8 @@ const ProjectList = () => {
                     name: values.name,
                     phone: values.phone,
                     dealType: values.dealType.toLowerCase(),
-                    transactionAmount: Number(values.transactionAmount),
-                    dealAmount: Number(values.dealAmount),
+                    transactionAmount: values.transactionAmount || 0,
+                    dealAmount: values.dealAmount,
                     transactionDate: moment().format('DD-MM-YYYY')
                 };
                 await dealsAPI.create(dealData);
@@ -197,8 +198,6 @@ const ProjectList = () => {
             message.error('Failed to add project. Please try again.');
         }
     };
-
-
 
     const handleEditProject = async (values: any) => {
         try {
@@ -225,7 +224,6 @@ const ProjectList = () => {
                 };
                 await projectsAPI.update(selectedEditProject, projectData);
             } else {
-                // Update all deals with the same project name
                 const projectName = (projectToEdit as PropertyDeal).projectName;
                 const dealsToUpdate = propertyDeals.filter(deal => deal.projectName === projectName);
 
@@ -383,7 +381,7 @@ const ProjectList = () => {
         {
             title: 'Transaction Type',
             dataIndex: 'dealType',
-            key: 'transactionType' ,
+            key: 'transactionType',
             width: 150,
         },
         {
@@ -484,11 +482,19 @@ const ProjectList = () => {
                         </Form.Item>
 
                         <Form.Item
+                            name="transactionAmount"
+                            label="Transaction amount"
+                            rules={[{ required: true, message: 'Please enter total deal amount!' }]}
+                        >
+                            <NumberInput />
+                        </Form.Item>
+
+                        <Form.Item
                             name="dealAmount"
                             label="Total Deal Amount"
                             rules={[{ required: true, message: 'Please enter total deal amount!' }]}
                         >
-                            <Input type="number" />
+                            <NumberInput />
                         </Form.Item>
                     </>
                 )}
@@ -665,7 +671,7 @@ const ProjectList = () => {
                 <h2 className="section-title-1">Contractor Projects</h2>
                 {isMobile ? (
                     <Spin spinning={loading} size='small'>
-                        {renderMobileCards(projects, 'contractor')}
+                        {projects.length > 0 ? renderMobileCards(projects, 'contractor') : (<div className="no-data">No Projects found</div>)}
                     </Spin>
                 ) : (
                     <>
@@ -691,7 +697,7 @@ const ProjectList = () => {
                 <h2 className="section-title-2">Property Deals</h2>
                 {isMobile ? (
                     <Spin spinning={loading} size='small'>
-                        {renderMobileCards(propertyDeals, 'property')}
+                        {projects.length > 0 ? renderMobileCards(propertyDeals, 'property') : (<div className="no-data">No Projects found</div>)}
                     </Spin>
                 ) : (
                     <Table

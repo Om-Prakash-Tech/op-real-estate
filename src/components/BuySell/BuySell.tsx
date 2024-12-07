@@ -404,18 +404,24 @@ const BuySell = () => {
                     />
                 </>
             ) : (
-                <div style={{ position: 'relative', minHeight: '200px' }}>
-                    <Button
-                        icon={<PlusOutlined />}
-                        type="primary"
-                        onClick={() => setIsNewTransactionModalVisible(true)}
-                        style={{ marginBottom: '16px', width: '100%' }}
-                    >
-                        New Transaction
-                    </Button>
+
+                <div style={{ position: 'relative', minHeight: '200px', display:'flex', flexDirection:'column' }}>
+                    <div style={{ display:'flex', justifyContent:'flex-end' }}>
+
+                        <Button
+                            icon={<PlusOutlined />}
+                            type="primary"
+                            onClick={() => setIsNewTransactionModalVisible(true)}
+                            style={{ marginBottom: '16px', justifyContent: 'right' }}
+                        >
+                            New Transaction
+                        </Button>
+                    </div>
                     <Spin spinning={loading}>
                         <Row gutter={[16, 16]} className="mobile-cards">
-                            {deals.map(renderMobileCard)}
+                            {deals.length > 0 ? deals.map(renderMobileCard) : (
+                                <div className="no-data">No Buy/Sell Transactions found</div>
+                            )}
                         </Row>
                     </Spin>
                 </div>

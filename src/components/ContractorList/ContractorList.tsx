@@ -236,7 +236,8 @@ const ContractorList: React.FC = () => {
 
             {window.innerWidth <= 768 ? (
                 <Spin spinning={loading} size="large" className='mobile-loading'>
-                    {renderMobileCards()}
+                    {contractors.length > 0 ? renderMobileCards() : (
+                        <div className="no-data">No Contractors found</div>)}
                 </Spin>
             ) : (
                 <Table
