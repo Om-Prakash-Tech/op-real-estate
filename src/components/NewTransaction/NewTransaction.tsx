@@ -4,6 +4,7 @@ import { UploadOutlined } from '@ant-design/icons';
 import { projectsAPI, contractorsAPI, transactionsAPI } from '../../api';
 import { metricsAPI } from '../../api';
 import type { RcFile } from 'antd/es/upload/interface';
+import { IndianNumberInput } from '../ProjectList/IndianNumberInput';
 
 interface Project {
     projectId: string;
@@ -161,11 +162,7 @@ const NewTransaction: React.FC<NewTransactionProps> = ({ onTransactionSuccess })
                         label="Transaction Amount"
                         rules={[{ required: true, message: 'Please enter transaction amount' }]}
                     >
-                        <Input
-                            type="number"
-                            prefix="₹"
-                            placeholder="Enter amount"
-                        />
+                        <IndianNumberInput />
                     </Form.Item>
 
                     <Form.Item

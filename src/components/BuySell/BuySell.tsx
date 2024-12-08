@@ -23,6 +23,7 @@ import { useMediaQuery } from '@mui/material';
 import SignatureCanvas from 'react-signature-canvas';
 import { dealsAPI } from '../../api';
 import './buy-sell.css';
+import { IndianNumberInput } from '../ProjectList/IndianNumberInput';
 
 interface PropertyDeal {
     dealId: string;
@@ -317,7 +318,7 @@ const BuySell = () => {
             <Card className="deal-card">
                 <div className="card-header">
                     <h3>{deal.name}</h3>
-                    <Space>
+                    {/*<Space>
                         <Button
                             icon={<EditOutlined />}
                             onClick={() => handleEditClick}
@@ -330,7 +331,7 @@ const BuySell = () => {
                                 setIsDeleteModalVisible(true);
                             }}
                         />
-                    </Space>
+                    </Space>*/}
                 </div>
                 <div className="deal-details">
                     <p>Project: <strong>{deal.projectName}</strong></p>
@@ -351,11 +352,17 @@ const BuySell = () => {
                         )}
                     </strong></p>
                     {deal.signature && (
-                        <p>Signature: <img
+                        <p>Signature: <Image
                             src={deal.signature}
                             alt="Signature"
                             style={{ maxWidth: '100px', maxHeight: '50px' }}
-                        /></p>
+                            preview={{
+                                mask: 'View Signature',
+                                maskClassName: 'signature-preview-mask'
+                            }}
+                            fallback="/placeholder-signature.png"
+                        />
+                        </p>
                     )}
                 </div>
             </Card>
@@ -375,7 +382,7 @@ const BuySell = () => {
                             >
                                 New Transaction
                             </Button>
-                            <Button
+                            {/*<Button
                                 icon={<EditOutlined />}
                                 onClick={handleEditClick}
                             >
@@ -392,7 +399,7 @@ const BuySell = () => {
                                 }}
                             >
                                 Delete Deal
-                            </Button>
+                            </Button>*/}
                         </Space>
                     </div>
                     <Table
@@ -405,8 +412,8 @@ const BuySell = () => {
                 </>
             ) : (
 
-                <div style={{ position: 'relative', minHeight: '200px', display:'flex', flexDirection:'column' }}>
-                    <div style={{ display:'flex', justifyContent:'flex-end' }}>
+                <div style={{ position: 'relative', minHeight: '200px', display: 'flex', flexDirection: 'column' }}>
+                    <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
 
                         <Button
                             icon={<PlusOutlined />}
@@ -457,20 +464,20 @@ const BuySell = () => {
                         </Select>
                     </Form.Item>
 
-                    <Form.Item
+                    {/*<Form.Item
                         name="phone"
                         label="Phone Number"
                         rules={[{ required: true, message: 'Please enter phone number' }]}
                     >
-                        <Input />
-                    </Form.Item>
+                        <Input disabled/>
+                    </Form.Item>*/}
 
                     <Form.Item
                         name="projectName"
                         label="Project Name"
                         rules={[{ required: true, message: 'Please enter project name' }]}
                     >
-                        <Input />
+                        <Input disabled />
                     </Form.Item>
 
                     <Form.Item
@@ -478,7 +485,7 @@ const BuySell = () => {
                         label="Transaction Type"
                         rules={[{ required: true, message: 'Please select transaction type' }]}
                     >
-                        <Radio.Group>
+                        <Radio.Group disabled>
                             <Radio value="buy">Buy</Radio>
                             <Radio value="sell">Sell</Radio>
                         </Radio.Group>
@@ -489,16 +496,16 @@ const BuySell = () => {
                         label="Transaction Amount"
                         rules={[{ required: true, message: 'Please enter transaction amount' }]}
                     >
-                        <Input type="number" />
+                        <IndianNumberInput />
                     </Form.Item>
 
-                    <Form.Item
+                    {/*<Form.Item
                         name="dealAmount"
                         label="Total Deal Amount"
                         rules={[{ required: true, message: 'Please enter total deal amount' }]}
                     >
-                        <Input type="number" />
-                    </Form.Item>
+                        <IndianNumberInput disabled/>
+                    </Form.Item>*/}
 
                     <Form.Item
                         name="paymentReceipt"
@@ -550,7 +557,7 @@ const BuySell = () => {
                         key="submit"
                         type="primary"
                         onClick={handleSignatureSubmit}
-                        disabled={!confirmChecked}
+                        disabled={!confirmChecked && !signatureRef}
                     >
                         Verify
                     </Button>
