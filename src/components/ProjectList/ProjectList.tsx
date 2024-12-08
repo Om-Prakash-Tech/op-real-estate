@@ -11,7 +11,7 @@ import {
 } from '../../api';
 import './project-list.css';
 import { ColumnType } from 'antd/es/table';
-import { NumberInput } from './IndianNumberInput';
+import { IndianNumberInput } from './IndianNumberInput';
 
 interface Contractor {
     contractorId: string;
@@ -486,7 +486,7 @@ const ProjectList = () => {
                             label="Transaction amount"
                             rules={[{ required: true, message: 'Please enter total deal amount!' }]}
                         >
-                            <NumberInput />
+                            <IndianNumberInput />
                         </Form.Item>
 
                         <Form.Item
@@ -494,7 +494,7 @@ const ProjectList = () => {
                             label="Total Deal Amount"
                             rules={[{ required: true, message: 'Please enter total deal amount!' }]}
                         >
-                            <NumberInput />
+                            <IndianNumberInput />
                         </Form.Item>
                     </>
                 )}
@@ -697,7 +697,7 @@ const ProjectList = () => {
                 <h2 className="section-title-2">Property Deals</h2>
                 {isMobile ? (
                     <Spin spinning={loading} size='small'>
-                        {projects.length > 0 ? renderMobileCards(propertyDeals, 'property') : (<div className="no-data">No Projects found</div>)}
+                        {propertyDeals.length > 0 ? renderMobileCards(propertyDeals, 'property') : (<div className="no-data">No Projects found</div>)}
                     </Spin>
                 ) : (
                     <Table

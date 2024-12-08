@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { Input } from 'antd';
 
-// Standard number formatting function
-export const formatNumber = (value: string | number) => {
+// Standard Indian number formatting function
+export const formatIndianNumber = (value: string | number) => {
     // Convert to string and remove existing commas
     const numString = String(value).replace(/,/g, '');
 
@@ -12,8 +12,28 @@ export const formatNumber = (value: string | number) => {
     // Split integer and decimal parts
     const [integerPart, decimalPart] = numString.split('.');
 
-    // Format integer part with commas
-    const formattedInteger = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    // Indian number formatting logic
+    const formatIndianStyle = (intPart: string) => {
+        const len = intPart.length;
+
+        // Less than 4 digits, no formatting needed
+        if (len <= 3) return intPart;
+
+        // Handle the last three digits
+        let result = intPart.slice(-3);
+
+        // Process remaining digits in groups of 2
+        for (let i = len - 3; i > 0; i -= 2) {
+            // Take 2 digits at a time (or remaining digits if less than 2)
+            const group = intPart.slice(Math.max(0, i - 2), i);
+            result = group + ',' + result;
+        }
+
+        return result;
+    };
+
+    // Format integer part with Indian-style commas
+    const formattedInteger = formatIndianStyle(integerPart);
 
     // Combine formatted integer with decimal part if exists
     return decimalPart
@@ -21,14 +41,14 @@ export const formatNumber = (value: string | number) => {
         : formattedInteger;
 };
 
-// Custom input component for formatted numbers
-export const NumberInput = ({
+// Custom input component for Indian-formatted numbers
+export const IndianNumberInput = ({
     value,
     onChange,
     ...props
 }: any) => {
     const [displayValue, setDisplayValue] = useState(
-        value ? formatNumber(value) : ''
+        value ? formatIndianNumber(value) : ''
     );
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -37,7 +57,7 @@ export const NumberInput = ({
         // Only allow numbers and optional decimal
         if (/^\d*\.?\d*$/.test(inputValue)) {
             // Update display with formatted value
-            setDisplayValue(formatNumber(inputValue));
+            setDisplayValue(formatIndianNumber(inputValue));
 
             // Call onChange with raw number
             if (onChange) {
