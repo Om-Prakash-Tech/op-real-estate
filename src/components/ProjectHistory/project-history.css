@@ -34,6 +34,12 @@
     color: #000000;
 }
 
+.step-title {
+    display: flex;
+    flex-direction: row;
+    column-gap: 10px;
+}
+
 /* Mobile Styles */
 @media screen and (max-width: 768px) {
     .project-history-card {
@@ -41,6 +47,8 @@
     }
 
     .step-title {
-        flex-direction: column;
+        display: flex;
+        flex-direction: row;
+        column-gap: 10px;
     }
 }

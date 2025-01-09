@@ -6,6 +6,7 @@ import { EditOutlined, DeleteOutlined, PlusOutlined } from '@ant-design/icons';
 import { contractorsAPI, metricsAPI } from '../../api';
 import AddContractor from '../AddContractor/AddContractor';
 import './contractor-list.css';
+import { AxiosError } from 'axios';
 
 interface Transaction {
     project: string;
@@ -123,16 +124,38 @@ const ContractorList: React.FC = () => {
         if (!selectedContractor) return;
 
         try {
-            await contractorsAPI.delete(selectedContractor.contractorId);
+            console.log('Attempting to delete contractor:', selectedContractor.contractorId);
+            const response = await contractorsAPI.delete(selectedContractor.contractorId);
+            console.log('Delete response:', response);
             message.success('Contractor deleted successfully');
             setShowDeleteModal(false);
             setSelectedContractor(null);
             fetchContractors();
         } catch (error) {
-            console.error('Error deleting contractor:', error);
+            console.error('Detailed error deleting contractor:', error);
+
+            // Narrow the error type
+            if (error instanceof Error) {
+                console.error('Error message:', error.message);
+            }
+
+            // Check if it's an Axios error
+            if (isAxiosError(error)) {
+                console.error('Error response:', error.response?.data);
+                console.error('Error status:', error.response?.status);
+                console.error('Error headers:', error.response?.headers);
+            }
+
             message.error('Failed to delete contractor');
         }
     };
+
+    // Helper function to check if the error is an AxiosError
+    function isAxiosError(error: unknown): error is AxiosError {
+        return (error as AxiosError).isAxiosError !== undefined;
+    }
+
+
 
     const handleAddSuccess = useCallback(async () => {
         setShowAddModal(false);

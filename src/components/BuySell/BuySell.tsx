@@ -18,7 +18,7 @@ import {
     Upload,
     Image
 } from 'antd';
-import { EditOutlined, DeleteOutlined, PlusOutlined, UploadOutlined } from '@ant-design/icons';
+import { TransactionOutlined, UploadOutlined, DownloadOutlined } from '@ant-design/icons';
 import { useMediaQuery } from '@mui/material';
 import SignatureCanvas from 'react-signature-canvas';
 import { dealsAPI } from '../../api';
@@ -83,7 +83,6 @@ const BuySell = () => {
         fetchDeals();
     }, []);
 
-
     const columns = [
         {
             title: 'Customer Name',
@@ -147,7 +146,7 @@ const BuySell = () => {
                         fallback="/placeholder-signature.png"
                     />
                 ) : '-'
-        },
+        }
     ];
 
     const handleStatusClick = (deal: PropertyDeal) => {
@@ -202,11 +201,6 @@ const BuySell = () => {
             console.error('Error adding new transaction:', error);
             message.error('Failed to add new transaction');
         }
-    };
-
-    const handleEditClick = () => {
-        editForm.resetFields();
-        setIsEditModalVisible(true);
     };
 
     const handleCustomerSelectInEdit = (customerName: string) => {
@@ -318,20 +312,6 @@ const BuySell = () => {
             <Card className="deal-card">
                 <div className="card-header">
                     <h3>{deal.name}</h3>
-                    {/*<Space>
-                        <Button
-                            icon={<EditOutlined />}
-                            onClick={() => handleEditClick}
-                        />
-                        <Button
-                            icon={<DeleteOutlined />}
-                            danger
-                            onClick={() => {
-                                setSelectedDeal(deal);
-                                setIsDeleteModalVisible(true);
-                            }}
-                        />
-                    </Space>*/}
                 </div>
                 <div className="deal-details">
                     <p>Project: <strong>{deal.projectName}</strong></p>
@@ -351,6 +331,7 @@ const BuySell = () => {
                             <span style={{ color: '#52c41a' }}>Verified</span>
                         )}
                     </strong></p>
+
                     {deal.signature && (
                         <p>Signature: <Image
                             src={deal.signature}
@@ -376,7 +357,7 @@ const BuySell = () => {
                     <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '16px' }}>
                         <Space>
                             <Button
-                                icon={<PlusOutlined />}
+                                icon={<TransactionOutlined />}
                                 type="primary"
                                 onClick={() => setIsNewTransactionModalVisible(true)}
                             >
@@ -416,7 +397,7 @@ const BuySell = () => {
                     <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
 
                         <Button
-                            icon={<PlusOutlined />}
+                            icon={<TransactionOutlined />}
                             type="primary"
                             onClick={() => setIsNewTransactionModalVisible(true)}
                             style={{ marginBottom: '16px', justifyContent: 'right' }}
