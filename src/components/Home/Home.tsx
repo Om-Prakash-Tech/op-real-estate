@@ -65,6 +65,7 @@ const Home: React.FC<HomeProps> = ({ refreshKey = 0 }) => {
           status: transaction.status || 'unverified'
         }));
       setTransactions(sanitizedTransactions);
+
     } catch (error) {
       message.error('Failed to fetch data');
       console.error(error);
@@ -170,7 +171,7 @@ const Home: React.FC<HomeProps> = ({ refreshKey = 0 }) => {
               mask: 'View Signature',
               maskClassName: 'signature-preview-mask'
             }}
-            fallback="/placeholder-signature.png" // Add a placeholder image
+            fallback="/placeholder-signature.png"
           />
         ) : (
           'No signature'
@@ -195,7 +196,7 @@ const Home: React.FC<HomeProps> = ({ refreshKey = 0 }) => {
         );
       },
       align: 'center',
-    },
+    }
   ];
 
 
@@ -209,15 +210,6 @@ const Home: React.FC<HomeProps> = ({ refreshKey = 0 }) => {
             >
               <div className='header'>
                 <div className="cont-name">{transaction.contractor?.name || 'N/A'}</div>
-                <Button
-                  className='edit-button'
-                  type="primary"
-                  icon={<TransactionOutlined />}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setShowNewTransactionModal(true);
-                  }}
-                />
               </div>
               <div className="divider" />
               <div className="amount-item">
@@ -283,7 +275,7 @@ const Home: React.FC<HomeProps> = ({ refreshKey = 0 }) => {
           icon={<TransactionOutlined />}
           onClick={() => setShowNewTransactionModal(true)}
         >
-          New Transaction
+          <div className='text'>New Transaction</div>
         </Button>
       </div>
 

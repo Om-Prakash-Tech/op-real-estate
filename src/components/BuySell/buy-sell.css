@@ -39,6 +39,7 @@
     border-radius: 4px;
     margin-bottom: 10px;
 }
+
 @media (max-width: 768px) {
     .buy-sell-container {
         padding: 2px;
@@ -59,7 +60,19 @@
         margin-bottom: -5px;
     }
 
-    .deal-details strong{
+    .deal-details strong {
         margin-left: 5px;
+    }
+
+    .report {
+        display: flex;
+        justify-content: flex-end;
+        width: 2rem;
+    }
+
+    .report-btn{
+        background-color: white;
+        color: #1890ff;
+        box-shadow: none;
     }
 }

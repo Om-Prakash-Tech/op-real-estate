@@ -1,7 +1,9 @@
 import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Steps, Card, Typography, Row, Col, Button } from 'antd';
-import { CloseOutlined } from '@ant-design/icons';
+import { CloseOutlined, DownloadOutlined } from '@ant-design/icons';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 const { Text, Title } = Typography;
 
@@ -35,11 +37,81 @@ const DealsHistory = () => {
         navigate('/projects');
     };
 
+    const generatePDF = () => {
+        const doc = new jsPDF();
+
+        // Add title
+        const projectName = sortedTransactions[0]?.projectName || 'Project';
+        doc.setFontSize(16);
+        doc.text(`Transaction Report - ${projectName}`, 14, 20);
+
+        // Prepare table data
+        const tableData = sortedTransactions.map(deal => [
+            new Date(deal.transactionDate).toLocaleDateString(),
+            deal.name,
+            deal.phone.toString(),
+            deal.transactionAmount.toLocaleString()
+        ]);
+
+        // Add total row
+        tableData.push([
+            'Total',
+            '',
+            '',
+            totalAmount.toLocaleString()
+        ]);
+
+        // Calculate balance
+        const dealAmount = sortedTransactions[0]?.dealAmount || 0;
+        const balance = dealAmount - totalAmount;
+
+        tableData.push([
+            'Total Deal Amount',
+            '',
+            '',
+            dealAmount.toLocaleString()
+        ]);
+
+        // Add balance row
+        tableData.push([
+            'Balance',
+            '',
+            '',
+            balance.toLocaleString()
+        ]);
+
+        // Configure and generate table
+        autoTable(doc,{
+            startY: 35,
+            head: [['Date', 'Name', 'Phone', 'Amount']],
+            body: tableData,
+            theme: 'grid',
+            styles: {
+                fontSize: 10,
+                font: "helvetica"
+            },
+            headStyles: { fillColor: [66, 139, 202] },
+            footStyles: { fillColor: [240, 240, 240] }
+        });
+
+        // Save the PDF
+        doc.save(`${projectName}_transaction_report.pdf`);
+    };
+
     return (
         <>
-            <Button icon={<CloseOutlined />} type="text" onClick={handleClose}>
-                Close
-            </Button>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                <Button icon={<CloseOutlined />} type="text" onClick={handleClose}>
+                    Close
+                </Button>
+                <Button
+                    icon={<DownloadOutlined />}
+                    type="primary"
+                    onClick={generatePDF}
+                >
+                    Download Report
+                </Button>
+            </div>
             <Card
                 className="project-history-card"
                 title={
